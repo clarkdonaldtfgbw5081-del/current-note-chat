@@ -1,20 +1,15 @@
-# Screen and File QA 0.13.5
+# Screen and File QA 0.13.6
 
-Makes generated conversation notes cleaner and ensures mathematical notation renders correctly in Obsidian.
+Fixes synchronization markers appearing as visible text in generated notes and improves note typography.
 
-- Questions now appear as native Obsidian callouts, with concise headings for AI answers and Feynman feedback.
-- Model output using `\\(...\\)` or `\\[...\\]` is converted to Obsidian's `$...$` and `$$...$$` notation before saving. Code spans and code blocks remain unchanged.
-- Internal synchronization markers now use hidden Obsidian comments instead of HTML comments that some editor modes or themes can expose.
-- Existing conversation notes migrate to the new marker and content format on their next automatic save or when opened through **View note**.
-- A generated turn that was edited by hand is preserved during migration instead of being restyled over.
-- Per-answer notes and manual transcript exports use the same formatting.
+- Internal markers use unused standard Markdown reference definitions, with blank lines separating them from questions and answers. Both HTML and percent-comment markers migrate when an existing conversation is saved.
+- Questions appear in a subtle card; AI answer labels are compact. Model headings stay below the note title, with fenced code unchanged.
+- Generated notes opt into theme-aware typography, readable spacing and horizontally scrollable display formulas through a CSS class. Other notes keep their theme styles.
+- Mathematical notation is normalized before saving. Handwritten edits remain protected.
+- Adds tests of rendered Markdown, marker migration, code preservation and answer retries.
 
-Screen/file Q&A, guided Feynman learning and one-note-per-conversation saving behavior are unchanged.
+Requires Obsidian 1.13.0 or newer on desktop. Reload the plugin after updating, then use **View note** to migrate a saved conversation. Internal reference definitions are still visible in source mode, as expected for Markdown; reading view should contain only the note content.
 
-Requires Obsidian 1.13.0 or newer on desktop. The plugin is free; AI providers may require separate accounts and charge for requests. Screen questions require a provider/model that accepts images. See the README for setup and network use.
+For manual installation, copy main.js, manifest.json and styles.css into .obsidian/plugins/current-note-chat/. AI providers may require separate accounts and charge for requests. Screen questions require an image-capable provider/model.
 
-For manual installation, place `main.js`, `manifest.json` and `styles.css` in `.obsidian/plugins/current-note-chat/` and enable **Screen and File QA**. Additional ZIPs, license notices and checksums are for manual installation and development; Obsidian downloads only the three standard assets.
-
-The release workflow requires Windows, macOS and Linux checks and the attestation step to pass. The checks include 69 automated regressions and a three-asset PDF installation smoke test. Broader end-to-end provider/learning/saving checks and macOS/Linux screen capture still need real-world testing.
-
-The community listing and official Obsidian plugin catalog entry are live. Directory clients may take a short time to detect a newly published version.
+Release publication requires Windows, macOS and Linux checks, 72 automated regressions, the three-asset PDF smoke test and build attestations. Actual Obsidian rendering under every theme and cross-platform screen capture still need real-world verification. Superseded Release entries are removed after this version publishes; source history and tags are retained.

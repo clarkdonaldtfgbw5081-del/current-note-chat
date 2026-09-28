@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.13.6
+
+- Replace synchronization comments with invisible standard Markdown reference definitions, separated from callouts and prose by blank lines. Migrate both older HTML and percent-comment markers.
+- Give generated notes a scoped, theme-aware layout with smaller headings, a neutral question card, comfortable spacing and scrollable display math. Keep model headings below the note title and leave fenced code unchanged.
+- Verify actual rendered Markdown output in automated tests, including legacy migrations and answer retries.
+- Publish the checked version before removing superseded GitHub Release entries; retain tags and commit history.
+
 ## 0.13.5
 
 - Preserve a generated turn that the user edited by hand when migrating an existing conversation note to the new 0.13.4 formatting.

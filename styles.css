@@ -447,3 +447,44 @@
   .current-note-chat__keyboard-hint { display: none; }
   .current-note-chat__activities { gap: 12px; }
 }
+
+/* Only generated notes opt in through frontmatter; ordinary vault notes keep
+   their theme typography. Both reading view and Live Preview are covered. */
+.current-note-chat-note {
+  --h1-size: 1.65em;
+  --h2-size: 1.28em;
+  --h3-size: 1.13em;
+  --h1-color: var(--text-normal);
+  --h2-color: var(--text-normal);
+  --h3-color: var(--text-normal);
+  --h1-line-height: 1.35;
+  --h2-line-height: 1.4;
+  --h3-line-height: 1.4;
+}
+.markdown-preview-view.current-note-chat-note .markdown-preview-sizer {
+  max-width: 800px;
+  line-height: 1.75;
+}
+.current-note-chat-note .callout[data-callout="question"] {
+  margin: 1.4em 0 1em;
+  padding: 12px 16px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  background: var(--background-secondary);
+  box-shadow: none;
+}
+.current-note-chat-note .callout[data-callout="question"] .callout-title {
+  font-size: 0.9em;
+  color: var(--text-muted);
+}
+.current-note-chat-note .callout[data-callout="question"] .callout-content > :last-child {
+  margin-bottom: 0;
+}
+.current-note-chat-note :is(h1, h2, h3) {
+  color: var(--text-normal);
+  letter-spacing: normal;
+}
+.current-note-chat-note h3 { margin-top: 1.6em; margin-bottom: 0.6em; }
+.current-note-chat-note hr { margin: 1.7em 0; opacity: 0.5; }
+.current-note-chat-note table { font-size: 0.95em; }
+.current-note-chat-note [class~="math-block"] { overflow-x: auto; padding: 8px 0; }

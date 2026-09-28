@@ -26,12 +26,43 @@ function safeBody(text) {
   // Content from a source or model cannot forge the markers that delimit owned blocks.
   return String(text)
     .replace(/<!--\s*current-note-chat:/gi, '&lt;!-- current-note-chat:')
-    .replace(/%%\s*current-note-chat:/gi, '&#37;&#37; current-note-chat:');
+    .replace(/%%\s*current-note-chat:/gi, '&#37;&#37; current-note-chat:')
+    .replace(/^(\s*)\[cnc-(conversation|message|end)-/gim, '$1&#91;cnc-$2-');
 }
 function noteBody(text) { return safeBody(normalizeMathDelimiters(String(text))); }
-function marker(kind, id) { return `%% current-note-chat:${kind}:${id} %%`; }
+// Unused link reference definitions are invisible in standard Markdown renderers,
+// including renderers that do not implement Obsidian's %% comments.
+function marker(kind, id) { return `[cnc-${kind}-${id}]: #`; }
 function migrateLegacyMarkers(content) {
-  return content.replace(/<!--\s*current-note-chat:(conversation|message|end):([0-9a-f-]+)\s*-->/gi, (_, kind, id) => marker(kind.toLowerCase(), id.toLowerCase()));
+  const migrated = content.replace(/(?:<!--\s*current-note-chat:(conversation|message|end):([0-9a-f-]+)\s*-->|%%\s*current-note-chat:(conversation|message|end):([0-9a-f-]+)\s*%%)/gi, (_, htmlKind, htmlId, kind, id) => marker((kind || htmlKind).toLowerCase(), (id || htmlId).toLowerCase()));
+  // Definitions must be separate blocks, especially after a question callout.
+  const lines = migrated.split('\n'), result = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (/^\[cnc-(?:conversation|message|end)-[0-9a-f-]+\]: #\r?$/.test(lines[i])) {
+      if (result.length && result.at(-1).trim()) result.push('');
+      result.push(lines[i]);
+      if (i + 1 < lines.length && lines[i + 1].trim()) result.push('');
+    } else result.push(lines[i]);
+  }
+  return result.join('\n');
+}
+function styleNote(content) {
+  const front = /^---\r?\n[\s\S]*?\r?\n---(?=\r?\n)/.exec(content);
+  if (!front || /^cssclasses:/m.test(front[0])) return content;
+  return content.replace(/^---\r?\n/, '---\ncssclasses:\n  - current-note-chat-note\n');
+}
+function answerBody(text) {
+  // Keep model headings subordinate to the note title; never change fenced code.
+  let fence = null;
+  return noteBody(text).split('\n').map(line => {
+    const match = /^ {0,3}(`{3,}|~{3,})/.exec(line);
+    if (match) {
+      if (!fence) fence = match[1];
+      else if (match[1][0] === fence[0] && match[1].length >= fence.length && /^ {0,3}(?:`+|~+)\s*$/.test(line)) fence = null;
+      return line;
+    }
+    return fence ? line : line.replace(/^ {0,3}#{1,2}(?=\s)/, '###');
+  }).join('\n');
 }
 function callout(type, title, body) {
   const quoted = noteBody(body).split('\n').map(line => `> ${line}`).join('\n');
@@ -41,7 +72,7 @@ function formatNoteMessage(message, activity = 'qa') {
   if (message.error) return `${callout('warning', L('回答未完成', 'Incomplete response'), message.text)}\n`;
   if (message.role === 'user') return `${callout('question', activity === 'feynman' ? L('我的解释 / 作答', 'My explanation / answer') : L('提问', 'Question'), message.text)}\n`;
   const label = activity === 'feynman' ? L('AI 学习反馈', 'AI learning feedback') : L('AI 解答', 'AI answer');
-  return `## ${label}\n\n${noteBody(message.text)}\n`;
+  return `**${label}**\n\n${answerBody(message.text)}\n`;
 }
 function blocksFor(thread, summary, activity = 'qa') {
   const blocks = new Map();
@@ -61,13 +92,15 @@ function mergeBlocks(content, blocks, hashes) {
     if (hashes[id] === nextHash) continue;
     const start = marker('message', id);
     const end = marker('end', id);
-    const block = `${start}\n${body}${end}`;
+    const block = `${start}\n\n${body}\n${end}`;
     const from = merged.indexOf(start), to = merged.indexOf(end, from);
     if (from >= 0 && to >= from) {
       const currentBody = merged.slice(from + start.length, to).replace(/^\r?\n/, '').replace(/\r\n/g, '\n');
       // A format migration may change the generated body. Preserve a turn that
       // the user edited after it was last written instead of restyling over it.
-      if (hashes[id] && digest(currentBody) !== hashes[id]) continue;
+      const withoutLeadingBlank = currentBody.replace(/^\n/, '');
+      const candidates = [currentBody, withoutLeadingBlank, currentBody.replace(/\n\n$/, '\n'), withoutLeadingBlank.replace(/\n\n$/, '\n')];
+      if (hashes[id] && !candidates.some(candidate => digest(candidate) === hashes[id])) continue;
       merged = merged.slice(0, from) + block + merged.slice(to + end.length);
     }
     else merged = merged.trimEnd() + '\n\n' + block + '\n';
@@ -116,7 +149,7 @@ class ConversationNotes {
         await vault.process(file, content => {
           const migrated = migrateLegacyMarkers(content);
           if (!migrated.includes(owner)) throw new OwnershipError('The note no longer has its conversation marker.');
-          return mergeBlocks(migrated, snapshot.blocks, record.hashes);
+          return styleNote(mergeBlocks(migrated, snapshot.blocks, record.hashes));
         });
       } catch (error) {
         if (!(error instanceof OwnershipError)) throw error;
@@ -135,7 +168,7 @@ class ConversationNotes {
       let path = `${base}.md`, suffix = 2;
       while (vault.getAbstractFileByPath(path)) path = `${base} (${suffix++}).md`;
       const frontmatter = ['---', `date: ${record.created}`, 'type: conversation', `conversation_id: ${JSON.stringify(record.id)}`, `mode: ${snapshot.meta.mode === 'screen' ? 'screen' : 'file'}`, `activity: ${snapshot.meta.activity === 'feynman' ? 'feynman' : 'qa'}`, ...(snapshot.meta.source ? [`source: ${JSON.stringify(snapshot.meta.source)}`] : []), ...(snapshot.meta.model ? [`model: ${JSON.stringify(snapshot.meta.model)}`] : []), '---', '', owner, '', `# ${safeBody(title)}`, ''].join('\n');
-      const content = mergeBlocks(frontmatter, snapshot.blocks, {});
+      const content = styleNote(mergeBlocks(frontmatter, snapshot.blocks, {}));
       await vault.create(path, content);
       record.path = path; record.hashes = {};
     }
@@ -144,4 +177,4 @@ class ConversationNotes {
     return record.path;
   }
 }
-module.exports = { noteSaveMode, loadNoteRecords, noteBody, formatNoteMessage, migrateLegacyMarkers, ConversationNotes };
+module.exports = { noteSaveMode, loadNoteRecords, noteBody, formatNoteMessage, migrateLegacyMarkers, styleNote, ConversationNotes };

@@ -204,6 +204,7 @@ const CurrentNoteChatPlugin = class extends Plugin {
       const frontmatter = [
         "---",
         `date: ${localDate}`,
+        "cssclasses: [current-note-chat-note]",
         "tags:",
         `  - ${L("AI问答", "AI-QA")}`,
         `mode: ${modeLabel}`,
@@ -270,6 +271,7 @@ const CurrentNoteChatPlugin = class extends Plugin {
       const content = [
         "---",
         `date: ${localDate}`,
+        "cssclasses: [current-note-chat-note]",
         "tags:",
         `  - ${L("AI问答", "AI-QA")}`,
         `mode: ${meta.mode === "screen" ? "screen" : "file"}`,
