@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.13.4
+
+- Format questions as native Obsidian callouts and use concise headings for AI answers and Feynman feedback.
+- Convert `\\(...\\)` and `\\[...\\]` model output to Obsidian-compatible math delimiters before writing notes, while leaving code spans and code blocks unchanged.
+- Replace visible HTML synchronization markers with native Obsidian comments. Existing conversation notes migrate automatically on their next save.
+- Apply the same readable formatting to one-note-per-answer and manual transcript exports.
+
 ## 0.13.3
 
 - Remove the duplicate user-message background declaration and use an attribute selector for display math, addressing the community CSS warnings.

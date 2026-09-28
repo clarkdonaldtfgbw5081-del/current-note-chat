@@ -8,7 +8,7 @@ const { captureScreen } = require('./screen');
 const { TaskManager, throwIfAborted } = require('./tasks');
 const sessions = require('./sessions');
 const { loadLessons, serializeLessons, learningKey } = require('./feynman');
-const { ConversationNotes, noteSaveMode } = require('./conversation-notes');
+const { ConversationNotes, noteSaveMode, formatNoteMessage } = require('./conversation-notes');
 const { FileTextCache } = require('./files');
 const { safeFolder } = require('./note-path');
 const { requestChat } = require('./stream');
@@ -213,13 +213,9 @@ const CurrentNoteChatPlugin = class extends Plugin {
         "---",
         "",
         ...(meta.source ? [`${L("提问对象", "Asked about")}: [[${meta.source}]]`, ""] : []),
-        `## ${L("🙋 问题", "🙋 Question")}`,
+        formatNoteMessage({ role: 'user', text: question }, meta.activity).trimEnd(),
         "",
-        question,
-        "",
-        `## ${L("💡 回答", "💡 Answer")}`,
-        "",
-        answer,
+        formatNoteMessage({ role: 'assistant', text: answer }, meta.activity).trimEnd(),
         ""
       ].join("\n");
       if (this.disposed) return;
@@ -270,8 +266,7 @@ const CurrentNoteChatPlugin = class extends Plugin {
       }
       const modelKey = { deepseek: "deepseekModel", openai: "openaiModel", api: "apiModel" }[this.settings.backend];
       const model = meta.model || (modelKey ? this.settings[modelKey] || "" : "Codex CLI");
-      const body = thread.map((message) => `${message.role === "user" ? `## ${L("🙋 问题", "🙋 Question")}` : `## ${L("💡 回答", "💡 Answer")}`}
-${message.text}`).join("\n\n---\n\n");
+      const body = thread.filter(message => !message.streaming && message.text?.trim()).map(message => formatNoteMessage(message, meta.activity).trimEnd()).join("\n\n---\n\n");
       const content = [
         "---",
         `date: ${localDate}`,

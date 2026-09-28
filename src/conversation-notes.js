@@ -3,6 +3,7 @@ const { TFile, normalizePath } = require('obsidian');
 const { L } = require('./i18n');
 const { safeFolder } = require('./note-path');
 const { MAX_SESSION_KEYS } = require('./constants');
+const { normalizeMathDelimiters } = require('./prompts');
 
 function noteSaveMode(settings) {
   return ['conversation', 'answer', 'off'].includes(settings.noteSaveMode) ? settings.noteSaveMode : settings.saveQA === false ? 'off' : 'conversation';
@@ -23,17 +24,33 @@ function loadNoteRecords(raw) {
 }
 function safeBody(text) {
   // Content from a source or model cannot forge the markers that delimit owned blocks.
-  return text.replace(/<!--\s*current-note-chat:/g, '&lt;!-- current-note-chat:');
+  return String(text)
+    .replace(/<!--\s*current-note-chat:/gi, '&lt;!-- current-note-chat:')
+    .replace(/%%\s*current-note-chat:/gi, '&#37;&#37; current-note-chat:');
 }
-function blocksFor(thread, summary) {
+function noteBody(text) { return safeBody(normalizeMathDelimiters(String(text))); }
+function marker(kind, id) { return `%% current-note-chat:${kind}:${id} %%`; }
+function migrateLegacyMarkers(content) {
+  return content.replace(/<!--\s*current-note-chat:(conversation|message|end):([0-9a-f-]+)\s*-->/gi, (_, kind, id) => marker(kind.toLowerCase(), id.toLowerCase()));
+}
+function callout(type, title, body) {
+  const quoted = noteBody(body).split('\n').map(line => `> ${line}`).join('\n');
+  return `> [!${type}] ${title}\n${quoted}`;
+}
+function formatNoteMessage(message, activity = 'qa') {
+  if (message.error) return `${callout('warning', L('回答未完成', 'Incomplete response'), message.text)}\n`;
+  if (message.role === 'user') return `${callout('question', activity === 'feynman' ? L('我的解释 / 作答', 'My explanation / answer') : L('提问', 'Question'), message.text)}\n`;
+  const label = activity === 'feynman' ? L('AI 学习反馈', 'AI learning feedback') : L('AI 解答', 'AI answer');
+  return `## ${label}\n\n${noteBody(message.text)}\n`;
+}
+function blocksFor(thread, summary, activity = 'qa') {
   const blocks = new Map();
   for (const message of thread) {
     if (message.streaming || !message.text?.trim()) continue;
     const id = digest(message.role === 'assistant' && message.replyTo ? `assistant:${message.replyTo}` : `${message.role}:${message.id}`);
-    const label = message.error ? L('⚠️ 未完成的回答', '⚠️ Incomplete response') : message.role === 'user' ? L('🙋 提问 / 作答', '🙋 Question / answer') : L('💡 AI 反馈', '💡 AI response');
-    blocks.set(id, `## ${label}\n\n${safeBody(message.text)}\n`);
+    blocks.set(id, formatNoteMessage(message, activity));
   }
-  if (summary) blocks.set(digest('learning-summary'), safeBody(summary) + '\n');
+  if (summary) blocks.set(digest('learning-summary'), noteBody(summary) + '\n');
   return blocks;
 }
 function mergeBlocks(content, blocks, hashes) {
@@ -42,8 +59,8 @@ function mergeBlocks(content, blocks, hashes) {
     const nextHash = digest(body);
     // Leave handwritten changes to an unchanged turn intact, including after restart.
     if (hashes[id] === nextHash) continue;
-    const start = `<!-- current-note-chat:message:${id} -->`;
-    const end = `<!-- current-note-chat:end:${id} -->`;
+    const start = marker('message', id);
+    const end = marker('end', id);
     const block = `${start}\n${body}${end}`;
     const from = merged.indexOf(start), to = merged.indexOf(end, from);
     if (from >= 0 && to >= from) merged = merged.slice(0, from) + block + merged.slice(to + end.length);
@@ -78,7 +95,7 @@ class ConversationNotes {
     this.records.delete(key); this.records.set(key, record);
     while (this.records.size > MAX_SESSION_KEYS) this.records.delete(this.records.keys().next().value);
     // Capture the turn before the UI changes or trims in-memory history.
-    const snapshot = { blocks: blocksFor(thread, meta.summary), title: thread.find(message => message.role === 'user').text, meta: { ...meta }, folder: this.plugin.settings.qaFolder };
+    const snapshot = { blocks: blocksFor(thread, meta.summary, meta.activity), title: thread.find(message => message.role === 'user').text, meta: { ...meta }, folder: this.plugin.settings.qaFolder };
     const task = this.chain.catch(() => {}).then(() => this.write(record, snapshot));
     this.chain = task;
     return task;
@@ -86,13 +103,14 @@ class ConversationNotes {
   async write(record, snapshot) {
     if (this.plugin.disposed) return null;
     const vault = this.plugin.app.vault;
-    const owner = `<!-- current-note-chat:conversation:${record.id} -->`;
+    const owner = marker('conversation', record.id);
     let file = record.path ? vault.getAbstractFileByPath(record.path) : null;
     if (file instanceof TFile && file.extension.toLowerCase() === 'md') {
       try {
         await vault.process(file, content => {
-          if (!content.includes(owner)) throw new OwnershipError('The note no longer has its conversation marker.');
-          return mergeBlocks(content, snapshot.blocks, record.hashes);
+          const migrated = migrateLegacyMarkers(content);
+          if (!migrated.includes(owner)) throw new OwnershipError('The note no longer has its conversation marker.');
+          return mergeBlocks(migrated, snapshot.blocks, record.hashes);
         });
       } catch (error) {
         if (!(error instanceof OwnershipError)) throw error;
@@ -120,4 +138,4 @@ class ConversationNotes {
     return record.path;
   }
 }
-module.exports = { noteSaveMode, loadNoteRecords, ConversationNotes };
+module.exports = { noteSaveMode, loadNoteRecords, noteBody, formatNoteMessage, migrateLegacyMarkers, ConversationNotes };

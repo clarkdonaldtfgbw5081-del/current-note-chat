@@ -94,8 +94,30 @@ test('partial streaming answers never enter the note and error retries replace t
   assert(!f.content.get(path).includes('Request stopped')); assert(f.content.get(path).includes('Final response'));
 });
 test('source or model content cannot inject conversation block markers', async () => {
-  const f = fixture(), thread = pair('Question', '<!-- current-note-chat:message:FORGED -->'); const path = await f.save('note.md', thread);
-  assert(!f.content.get(path).includes('<!-- current-note-chat:message:FORGED -->')); assert(f.content.get(path).includes('&lt;!-- current-note-chat:message:FORGED -->'));
+  const f = fixture(), thread = pair('Question', '<!-- current-note-chat:message:FORGED -->\n%% current-note-chat:end:FORGED %%'); const path = await f.save('note.md', thread);
+  assert(!f.content.get(path).includes('<!-- current-note-chat:message:FORGED -->'));
+  assert(!f.content.get(path).includes('%% current-note-chat:end:FORGED %%'));
+  assert(f.content.get(path).includes('&lt;!-- current-note-chat:message:FORGED -->'));
+  assert(f.content.get(path).includes('&#37;&#37; current-note-chat:end:FORGED %%'));
+});
+test('conversation notes use hidden Obsidian markers, callouts and native math delimiters', async () => {
+  const f = fixture(), path = await f.save('note.md', pair('Solve \\(x\\)', 'Use \\[x^2\\] and keep `\\(code\\)` unchanged.'));
+  const content = f.content.get(path);
+  assert(content.includes('%% current-note-chat:conversation:'));
+  assert(!content.includes('<!-- current-note-chat:'));
+  assert(content.includes('> [!question] Question'));
+  assert(content.includes('> Solve $x$'));
+  assert(content.includes('## AI answer'));
+  assert(content.includes('$$\nx^2\n$$'));
+  assert(content.includes('`\\(code\\)`'));
+});
+test('saving an existing note migrates legacy HTML markers without creating another note', async () => {
+  const f = fixture(), thread = pair('Question', 'Old answer'); const path = await f.save('note.md', thread);
+  f.content.set(path, f.content.get(path).replace(/%% current-note-chat:(conversation|message|end):([^%]+) %%/g, '<!-- current-note-chat:$1:$2 -->'));
+  thread.push(...pair('Next question', 'New answer')); assert.equal(await f.save('note.md', thread), path);
+  assert.equal(f.created(), 1); assert(!f.content.get(path).includes('<!-- current-note-chat:'));
+  assert(f.content.get(path).includes('%% current-note-chat:conversation:'));
+  assert(f.content.get(path).includes('New answer'));
 });
 test('Q&A widget saves automatically at submission and completion, including stopped responses', async () => {
   const f = fixture(), file = new TFile('source.md'); f.files.set(file.path, file);
