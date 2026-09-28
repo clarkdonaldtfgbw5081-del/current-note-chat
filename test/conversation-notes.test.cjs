@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { createHash } = require('node:crypto');
 const { install, TFile } = require('./helpers/obsidian.cjs');
 install();
 const Plugin = require('../src/main');
@@ -118,6 +119,17 @@ test('saving an existing note migrates legacy HTML markers without creating anot
   assert.equal(f.created(), 1); assert(!f.content.get(path).includes('<!-- current-note-chat:'));
   assert(f.content.get(path).includes('%% current-note-chat:conversation:'));
   assert(f.content.get(path).includes('New answer'));
+});
+test('format migration preserves a generated turn that the user edited by hand', async () => {
+  const f = fixture(), thread = pair('Question', 'Original answer'); const path = await f.save('note.md', thread);
+  const answerId = createHash('sha256').update(`assistant:${thread[0].id}`).digest('hex');
+  const current = `## AI answer\n\nOriginal answer\n`;
+  const legacy = `## 💡 AI response\n\nOriginal answer\n`;
+  f.content.set(path, f.content.get(path).replace(current, legacy).replace('Original answer', 'My revised answer'));
+  f.plugin.conversationNotes.records.get('note.md').hashes[answerId] = createHash('sha256').update(legacy).digest('hex');
+  await f.save('note.md', thread);
+  assert(f.content.get(path).includes('My revised answer'));
+  assert(!f.content.get(path).includes('## AI answer'));
 });
 test('Q&A widget saves automatically at submission and completion, including stopped responses', async () => {
   const f = fixture(), file = new TFile('source.md'); f.files.set(file.path, file);

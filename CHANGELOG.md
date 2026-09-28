@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.5
+
+- Preserve a generated turn that the user edited by hand when migrating an existing conversation note to the new 0.13.4 formatting.
+
 ## 0.13.4
 
 - Format questions as native Obsidian callouts and use concise headings for AI answers and Feynman feedback.

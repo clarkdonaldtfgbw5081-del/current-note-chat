@@ -63,7 +63,13 @@ function mergeBlocks(content, blocks, hashes) {
     const end = marker('end', id);
     const block = `${start}\n${body}${end}`;
     const from = merged.indexOf(start), to = merged.indexOf(end, from);
-    if (from >= 0 && to >= from) merged = merged.slice(0, from) + block + merged.slice(to + end.length);
+    if (from >= 0 && to >= from) {
+      const currentBody = merged.slice(from + start.length, to).replace(/^\r?\n/, '').replace(/\r\n/g, '\n');
+      // A format migration may change the generated body. Preserve a turn that
+      // the user edited after it was last written instead of restyling over it.
+      if (hashes[id] && digest(currentBody) !== hashes[id]) continue;
+      merged = merged.slice(0, from) + block + merged.slice(to + end.length);
+    }
     else merged = merged.trimEnd() + '\n\n' + block + '\n';
   }
   return merged;
