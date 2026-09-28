@@ -1,19 +1,18 @@
-# Screen and File QA 0.13.2
+# Screen and File QA 0.13.3
 
-First public release of the desktop screen/file assistant with guided Feynman learning and automatic conversation notes.
+Addresses the community review's CSS warnings and adds verifiable build provenance for the three installation assets.
 
-- Ask AI about the selected display or the current Markdown, PDF, Word or text file.
-- Learn one concept by explaining it in your own words, solving an application problem and teaching it back. Feedback identifies gaps and records progress.
-- Automatically update one Markdown note per conversation. Settings can switch to separate notes per answer or turn saving off.
-- Review screenshots and proposed note revisions before sending/applying; stop requests and retry individual failures.
-- Use Codex CLI, OpenAI, DeepSeek or a compatible Chat Completions endpoint. The floating panel supports Chinese/English and Obsidian theme colors.
+- Remove the duplicate background declaration in user messages.
+- Preserve horizontally scrolling display math with a scoped attribute selector.
+- Generate GitHub artifact attestations for `main.js`, `manifest.json` and `styles.css` before publishing.
+- Explain why the optional Codex backend uses filesystem/process access, why Copy writes the clipboard, and why PDF.js may produce a dynamic-code recommendation. PDF-generated function compilation remains disabled.
 
-Requires Obsidian 1.13.0 or newer on desktop. The plugin is free; AI providers may require separate accounts and charge for requests. Screen questions require a provider/model that accepts images. Refer to the README and SECURITY.md for network use and local data storage.
+Screen/file Q&A, guided Feynman learning and one-note-per-conversation saving are unchanged. Review notices are documented in `docs/COMMUNITY_REVIEW.md`, README and SECURITY.md.
 
-For manual installation, place `main.js`, `manifest.json` and `styles.css` in `.obsidian/plugins/current-note-chat/` and enable **Screen and File QA**. The plugin ZIP contains the runtime assets and notices. The source ZIP is for development.
+Requires Obsidian 1.13.0 or newer on desktop. The plugin is free; AI providers may require separate accounts and charge for requests. Screen questions require a provider/model that accepts images. See the README for setup and network use.
 
-Validation includes 66 automated regressions, a clean source build and a three-asset PDF installation smoke test. The release workflow requires Windows, macOS and Linux checks to pass before publication. The panel was loaded and inspected in Obsidian 1.13.7 on Windows. End-to-end provider/learning/saving checks and multi-display screenshot behavior still need broader real-world testing; macOS/Linux screen capture has not been manually verified. The README image is a design preview with synthetic content.
+For manual installation, place `main.js`, `manifest.json` and `styles.css` in `.obsidian/plugins/current-note-chat/` and enable **Screen and File QA**. Additional ZIPs, license notices and checksums are for manual installation and development; Obsidian downloads only the three standard assets.
 
-This release is prepared for community-directory submission. Marketplace availability depends on Obsidian's review and publication; a GitHub release alone does not add the plugin to the directory.
+The release workflow requires Windows, macOS and Linux checks and the attestation step to pass. The checks include 66 automated regressions and a three-asset PDF installation smoke test. Broader end-to-end provider/learning/saving checks and macOS/Linux screen capture still need real-world testing.
 
-The opening command is now `current-note-chat:open-chat`. If you assigned a shortcut to the previous local command, assign it again using **Open Screen & File Q&A**.
+The community listing has been published, but the automated review is still in progress. Marketplace installation availability depends on the directory's review result.

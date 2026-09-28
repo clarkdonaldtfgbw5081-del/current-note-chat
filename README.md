@@ -12,6 +12,8 @@ The plugin is free and open source. AI providers may require their own account, 
 
 **Privacy:** Screen Q&A captures the selected display, including other application windows. A preview is shown before sending by default. The question, recent conversation and screenshot or selected file excerpts are sent to your configured provider. API keys use Obsidian SecretStorage. Chat histories and exported notes are local vault data that may be copied by vault sync. See [SECURITY.md](SECURITY.md) for storage, cancellation and Codex details.
 
+Community review may flag filesystem access and child processes used by the optional Codex CLI backend, clipboard writes performed by the Copy answer button, and Function constructors inside the bundled PDF.js dependency. PDF parsing sets `isEvalSupported: false` to disable PDF-generated function compilation. The plugin's own code does not evaluate AI answers as JavaScript or shell commands. See [Review notices](docs/COMMUNITY_REVIEW.md) for the capabilities and release-asset checks.
+
 ## Features
 
 - **Screen Q&A:** capture the Obsidian display or the display under the cursor; review the screenshot before sending. A missing display match produces an error instead of capturing a different monitor.

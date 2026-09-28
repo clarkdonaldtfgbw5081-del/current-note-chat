@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.3
+
+- Remove the duplicate user-message background declaration and use an attribute selector for display math, addressing the community CSS warnings.
+- Generate GitHub build provenance attestations for the three installation assets before publishing releases.
+- Explain the community scanner's filesystem, process, clipboard and PDF dependency notices in the English/Chinese README and security documentation.
+
 ## 0.13.2
 
 - Prepare the first public release with the directory-compatible name Screen and File QA, maintainer information, provider disclosures and a synthetic interface preview.

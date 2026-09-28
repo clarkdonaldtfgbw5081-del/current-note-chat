@@ -224,7 +224,6 @@
 .current-note-chat__message--user {
   align-self: flex-end;
   white-space: pre-wrap;
-  background: var(--background-secondary);
   background: color-mix(in srgb, var(--interactive-accent) 12%, var(--background-primary));
   color: var(--text-normal);
   border: 1px solid color-mix(in srgb, var(--interactive-accent) 22%, var(--background-modifier-border));
@@ -271,7 +270,7 @@
 }
 
 .current-note-chat__rendered .math-block,
-.current-note-chat__rendered mjx-container[display="true"],
+.current-note-chat__rendered [display="true"],
 .current-note-chat__rendered pre,
 .current-note-chat__rendered table {
   max-width: 100%;
