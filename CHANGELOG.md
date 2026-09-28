@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.14.0
+
+- Add AI classification and knowledge archiving, enabled alongside automatic note saving. Restrict candidate selection and writes to a configurable knowledge folder and its subfolders.
+- Append summaries to a clearly matching existing topic or create a categorized concept note, keeping original transcripts and handwritten content. Link to the full conversation and source when available.
+- Put uncertain classifications in Inbox; retain original answers there on request/format/path failures. Never classify stopped or failed Q&A responses.
+- Archive Feynman learning reports only after completion. Add a manual archive command and visible classification status with a link to the knowledge note.
+- Bound request sizes, candidates, queue length and persisted duplicate-prevention records. Cancel active and queued work on setting changes/unload; cancelled jobs cannot revive on rapid re-enabling.
+- Explain the additional provider request/charges, titles-only candidate selection, partial summaries for long answers and model classification limits in both READMEs and security documentation.
+
 ## 0.13.7
 
 - Remove internal conversation/message/end markers entirely from generated Markdown, including source mode. Store block positions and hashes in plugin data instead.

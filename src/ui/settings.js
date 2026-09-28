@@ -27,11 +27,18 @@ const CurrentNoteChatSettings = class extends PluginSettingTab {
       .addOption('off', L('关闭自动保存', 'Off'))
       .setValue(noteSaveMode(this.plugin.settings)).onChange(async value => {
         this.plugin.settings.noteSaveMode = value; this.plugin.settings.saveQA = value !== 'off';
+        if (value === 'off') this.plugin.knowledgeNotes?.cancel();
         await this.plugin.saveSettings(); this.plugin.refreshViews();
       }));
     new Setting(containerEl).setName(L("对话笔记保存位置", "Conversation notes folder")).setDesc(L("仓库内的文件夹路径；留空时默认为「AI 问答」（英文界面为 AI Q&A），文件夹不存在会自动创建。修改后新的对话使用新位置，已有对话继续更新原笔记。", "A folder path in the vault; empty defaults to AI Q&A. Missing folders are created. Folder changes apply to new conversations; existing ones keep updating their original note.")).addText((text) => text.setPlaceholder(L("AI 问答", "AI Q&A")).setValue(this.plugin.settings.qaFolder ?? "").onChange(async (value) => {
       this.plugin.settings.qaFolder = value.trim();
       await this.plugin.saveSettings();
+    }));
+    new Setting(containerEl).setName(L('AI 自动分类归档', 'AI classification and archiving')).setDesc(L('完整回答保存后，额外请求一次当前 AI，提炼知识点并归入知识目录中的主题笔记。只发送问题、回答和候选笔记名称；原对话保留。不确定时放入“待整理”。费曼学习完成后归档通过记录。关闭自动保存时也停止自动归档。', 'After saving a complete answer, make one additional request to the current AI to summarize and file it in a topic note. Only the question, answer and candidate note names are sent; the transcript stays intact. Uncertain results go to Inbox. Feynman rounds archive on completion. Turning off automatic saving also stops automatic archiving.')).addToggle(toggle => toggle.setValue(this.plugin.settings.autoClassify).onChange(async value => {
+      this.plugin.settings.autoClassify = value; if (!value) this.plugin.knowledgeNotes?.cancel(); await this.plugin.saveSettings(); this.plugin.refreshViews();
+    }));
+    new Setting(containerEl).setName(L('知识笔记目录', 'Knowledge notes folder')).setDesc(L('默认“AI 知识库”。只在此目录及子目录寻找已有主题笔记；需要时创建分类目录和主题笔记。已有内容保留，摘要追加在末尾。分类请求可能产生额外 AI 费用。', 'Defaults to AI Knowledge. Search for existing topic notes only inside this folder and its subfolders; create categories and topic notes when needed. Summaries append without replacing existing content. Classification requests may incur additional AI usage.')).addText(text => text.setPlaceholder(L('AI 知识库', 'AI Knowledge')).setValue(this.plugin.settings.knowledgeFolder).onChange(async value => {
+      this.plugin.knowledgeNotes?.cancel(); this.plugin.settings.knowledgeFolder = value.trim(); await this.plugin.saveSettings();
     }));
     new Setting(containerEl).setName(L("显示悬浮提问按钮", "Show floating Ask button")).setDesc(L("关闭后可从左侧功能区图标或命令面板打开问答窗口。", "Turn off to open the panel from the left ribbon icon or the command palette instead.")).addToggle((toggle) => toggle.setValue(this.plugin.settings.showLauncher !== false).onChange(async (value) => {
       this.plugin.settings.showLauncher = value;

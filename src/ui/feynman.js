@@ -156,13 +156,14 @@ class FeynmanLearning {
       this.plugin.learningSessions.delete(key); this.plugin.learningSessions.set(key, transition.state);
       if (noteSaveMode(this.plugin.settings) === 'answer') {
         const content = transition.state.phase === 'complete' ? `${reply.text}\n\n${this.report(transition.state)}` : reply.text;
-        void this.plugin.saveQAToNote(answer, content, { mode: state.source.mode, source: state.source.path, model: this.plugin.currentModel(), activity: 'feynman' });
+        await this.plugin.saveQAToNote(answer, content, { mode: state.source.mode, source: state.source.path, model: this.plugin.currentModel(), activity: 'feynman', archiveReady: transition.state.phase === 'complete', archiveKey: key, archiveMessageId: user.id, topic: state.topic });
       }
     } catch (error) {
       if (!widget.unmounted) { reply.streaming = false; reply.error = true; reply.text = `${L('学习反馈未完成', 'Learning feedback incomplete')}: ${error.message || error}`; }
     } finally {
       const savedState = this.plugin.learningSessions.get(key);
       if (!widget.unmounted && this.plugin.messagesByNote.get(key) === thread && savedState) await this.saveTranscript(key, thread, savedState);
+      if (!widget.unmounted && savedState?.phase === 'complete' && !reply.error && !reply.streaming && noteSaveMode(this.plugin.settings) === 'conversation') void this.plugin.queueKnowledgeArchive?.(key, { id: user.id, text: savedState.topic }, { text: this.report(savedState) }, { activity: 'feynman', topic: savedState.topic, source: savedState.source?.path });
       widget.busy = false; this.requestKey = null; widget.requestController = null;
       if (!widget.unmounted) { this.plugin.queueSaveSessions(); widget.refresh(); }
     }

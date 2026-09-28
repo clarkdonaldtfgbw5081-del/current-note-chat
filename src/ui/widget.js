@@ -59,6 +59,13 @@ class CurrentNoteChatWidget {
     }
     this.learning.mount(controls);
     this.noteEl = controls.createDiv({ cls: 'current-note-chat__note' });
+    this.archiveRow = controls.createDiv({ cls: 'current-note-chat__archive-row', attr: { 'aria-live': 'polite' } });
+    this.archiveStatusEl = this.archiveRow.createSpan();
+    this.archiveButton = iconButton(this.archiveRow, L('查看知识笔记', 'View knowledge note'), 'folder-open');
+    this.archiveButton.addEventListener('click', () => {
+      const path = this.plugin.knowledgeNotes?.statuses.get(this.getChatKey())?.path;
+      if (path && this.plugin.app.vault.getAbstractFileByPath(path)) void this.plugin.app.workspace.openLinkText(path, '', true);
+    });
     this.messagesEl = root.createDiv({ cls: 'current-note-chat__messages', attr: { 'aria-live': 'polite', 'aria-label': L('对话记录', 'Conversation') } });
     const composer = root.createDiv({ cls: 'current-note-chat__composer' });
     this.inputEl = composer.createEl('textarea', { cls: 'current-note-chat__input', attr: { 'aria-label': L('问题或笔记修改要求', 'Question or note revision instruction') } });
@@ -113,6 +120,14 @@ class CurrentNoteChatWidget {
     for (const [mode, button] of Object.entries(this.modeButtons)) { button.disabled = this.busy; button.setAttribute('aria-pressed', String(this.plugin.settings.contextMode === mode)); }
     const provider = { codex: 'Codex CLI', deepseek: 'DeepSeek', openai: 'OpenAI', api: L('自定义 API', 'Custom API') }[this.plugin.settings.backend];
     this.statusEl.setText(this.busy ? `${provider} · ${L('正在处理', 'Working')}…` : `${provider}${noteSaveMode(this.plugin.settings) === 'conversation' ? ` · ${L('自动记录', 'Auto-save')}` : ''}`);
+    const archive = this.plugin.knowledgeNotes?.statuses.get(this.getChatKey());
+    this.archiveRow?.toggleClass('is-hidden', !archive);
+    if (archive && this.archiveStatusEl) {
+      const title = archive.path?.split('/').at(-1).replace(/\.md$/, '');
+      this.archiveStatusEl.setText(archive.state === 'saved' ? `${archive.inbox ? L('待整理', 'Inbox') : L('已归档', 'Archived')}: ${title}` : archive.state === 'error' ? L('归档未完成，可从命令面板重试。', 'Archiving incomplete; retry from the command palette.') : L('正在整理知识…', 'Organizing knowledge…'));
+      this.archiveStatusEl.setAttribute('title', archive.error || archive.path || '');
+      this.archiveButton.toggleClass('is-hidden', !archive.path); this.archiveButton.disabled = this.busy;
+    }
     this.learning.refresh();
     this.renderMessages();
   }
@@ -246,13 +261,14 @@ class CurrentNoteChatWidget {
       throwIfAborted(signal); if (this.unmounted) return;
       reply.streaming = false;
       reply.text = snapshot.partial ? `${answer}\n\n${L('（本次基于相关片段回答，未涵盖全文。）', '(Answered from selected excerpts, not the complete file.)')}` : answer;
-      if (noteSaveMode(this.plugin.settings) === 'answer') void this.plugin.saveQAToNote(question, reply.text, meta);
+      if (noteSaveMode(this.plugin.settings) === 'answer') await this.plugin.saveQAToNote(question, reply.text, { ...meta, archiveKey: key, archiveMessageId: user.id });
     } catch (error) {
       if (!this.unmounted) { reply.streaming = false; reply.error = true; reply.text = `${L('无法回答', 'Could not answer')}: ${error.message || error}`; }
     } finally {
       clearTimeout(this._streamRenderTimer); this._streamRenderTimer = null;
       const savedKey = mode === 'file' ? file?.path || key : key;
       if (!this.unmounted && this.plugin.messagesByNote.get(savedKey) === thread) await this.plugin.saveConversation?.(savedKey, thread, { ...meta, source: mode === 'file' ? savedKey : undefined });
+      if (!this.unmounted && this.plugin.messagesByNote.get(savedKey) === thread && noteSaveMode(this.plugin.settings) === 'conversation' && !reply.error && !reply.streaming) void this.plugin.queueKnowledgeArchive?.(savedKey, user, reply, { ...meta, source: mode === 'file' ? savedKey : undefined });
       this.busy = false; this.requestController = null;
       if (!this.unmounted) { this.plugin.queueSaveSessions(); this.refresh(); }
     }

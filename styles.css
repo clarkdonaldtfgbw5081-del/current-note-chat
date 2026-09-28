@@ -488,3 +488,22 @@
 .current-note-chat-note hr { margin: 1.7em 0; opacity: 0.5; }
 .current-note-chat-note table { font-size: 0.95em; }
 .current-note-chat-note [class~="math-block"] { overflow-x: auto; padding: 8px 0; }
+
+.current-note-chat__archive-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+.current-note-chat__archive-row.is-hidden,
+.current-note-chat__archive-row .is-hidden { display: none; }
+.current-note-chat__archive-row > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

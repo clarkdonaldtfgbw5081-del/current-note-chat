@@ -218,4 +218,4 @@ class ConversationNotes {
     return record.path;
   }
 }
-module.exports = { noteSaveMode, loadNoteRecords, noteBody, formatNoteMessage, migrateLegacyMarkers, cleanLegacyNote, styleNote, ConversationNotes };
+module.exports = { noteSaveMode, loadNoteRecords, noteBody, answerBody, formatNoteMessage, migrateLegacyMarkers, cleanLegacyNote, styleNote, ConversationNotes };

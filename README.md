@@ -24,6 +24,7 @@ Community review may flag filesystem access and child processes used by the opti
 - **Streaming:** stream answers where supported. Authentication and ambiguous network failures never trigger automatic resending. A setting enables non-streaming Obsidian requests when browser streaming is blocked.
 - **Persistent history:** retain up to 80 messages per conversation and 40 recent conversations in memory and on disk.
 - **Automatic conversation notes:** each conversation updates one Markdown note by default, including questions, responses and learning progress. Choose separate notes per answer or disable automatic saving in settings.
+- **AI knowledge archiving:** summarize complete answers into topic notes within AI Knowledge, reuse an existing topic when its title clearly matches, and send uncertain classifications to Inbox.
 - **Providers:** Codex CLI, DeepSeek, OpenAI and OpenAI-compatible Chat Completions endpoints. Text-only and image capabilities are checked separately.
 - **Bilingual interface:** English and Simplified Chinese, following the Obsidian locale.
 
@@ -85,6 +86,16 @@ Learning is separate from Q&A history. File excerpts are frozen for the round an
 **Automatic note saving** offers **One note per conversation (default)**, **One note per answer**, and **Off**. The default starts recording with the first message and updates the same note through questions, hints and reviews. Per-answer mode saves each successful provider response separately and includes a learning report on the final Feynman response. Manual **Export** remains available in per-answer and off modes. Previously disabled auto-save settings remain disabled on upgrade.
 
 Choose a vault folder in **Conversation notes folder**, defaulting to **AI Q&A**. Folder changes apply to new conversations; existing ones keep updating their original note. Renaming or moving a conversation note preserves its binding. Deleted or repurposed notes are replaced with a new note without overwriting unrelated content.
+
+### Automatically organize knowledge
+
+**AI classification and archiving** is enabled by default when automatic note saving is enabled. After a complete Q&A answer is saved, a background request to the configured provider summarizes it and chooses a knowledge note. Feynman rounds archive their report only after completion; hints and unfinished assessments remain in the conversation.
+
+The default knowledge folder is **AI Knowledge** (**AI 知识库** in a Chinese interface). Classification considers only Markdown titles and paths within this folder and its subfolders, excluding the current source, transcript and Inbox. It sends no existing note contents. A clearly matching concept receives an appended section; otherwise the plugin creates a topic note inside one to three category folders. Handwritten content stays intact and archived sections link to their full conversation and source when available.
+
+For example, a probability answer may go to AI Knowledge/Mathematics/Probability/Independence.md. This is an illustration: category names and classification depend on the model. Classification is a suggestion, not a verified fact. Low-confidence results go to **Inbox**. If classification fails or returns an unsafe destination, Inbox retains the original answer for review. Stopped and failed Q&A answers are not classified.
+
+The extra request can incur provider charges. It sends up to 8,000 question characters, 24,000 answer characters and 120 candidate names/paths; long answers may therefore produce a partial summary, while the full conversation remains available. There is no full-vault content indexing. Change **Knowledge notes folder**, disable **AI classification and archiving**, or use the command **Archive current answer to a knowledge note** to archive a completed answer manually. Turning off automatic note saving also stops automatic classification. Cancelled jobs stay cancelled even if settings are quickly re-enabled. Previously saved answers are not retroactively classified.
 
 ## Data and limits
 

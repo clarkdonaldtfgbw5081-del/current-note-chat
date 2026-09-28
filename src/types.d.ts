@@ -20,6 +20,8 @@ export interface PluginSettings {
   saveQA: boolean;
   noteSaveMode: 'conversation' | 'answer' | 'off';
   qaFolder: string;
+  autoClassify: boolean;
+  knowledgeFolder: string;
   showLauncher: boolean;
   screenshotMaxEdge: number;
   screenFollowCursor: boolean;
@@ -70,4 +72,6 @@ export interface ConversationNoteRecord {
   path: string | null;
   created: string;
   hashes: Record<string, string>;
+  ranges: Record<string, { start: number; end: number; hash: string }>;
+  clean: boolean;
 }

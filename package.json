@@ -1,6 +1,6 @@
 {
   "name": "current-note-chat",
-  "version": "0.13.7",
+  "version": "0.14.0",
   "private": true,
   "description": "Screen and file Q&A for Obsidian desktop, with Feynman learning and reviewed note revisions.",
   "license": "MIT",

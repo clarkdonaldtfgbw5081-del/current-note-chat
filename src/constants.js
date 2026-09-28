@@ -25,6 +25,8 @@ const DEFAULT_SETTINGS = {
   saveQA: true,
   noteSaveMode: 'conversation',
   qaFolder: "",
+  autoClassify: true,
+  knowledgeFolder: "",
   showLauncher: true,
   screenshotMaxEdge: 2048,
   screenFollowCursor: false,

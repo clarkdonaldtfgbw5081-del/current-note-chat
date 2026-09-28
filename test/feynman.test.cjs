@@ -151,6 +151,29 @@ test('learning API uses a dedicated tutor instruction and hides JSON from stream
   await plugin.askLearning('Image prompt', 'data:image/png;base64,SYNTHETIC');
   assert.equal(request.messages[1].content[0].text, 'Image prompt'); assert.equal(request.messages[1].content[1].image_url.url, 'data:image/png;base64,SYNTHETIC');
 });
+test('classification uses the configured provider with its own JSON instruction and no screenshot', async () => {
+  const plugin = new Plugin(); plugin.settings = { backend: 'deepseek', streamingEnabled: true, deepseekThinking: false };
+  plugin.getApiConfig = () => ({ backend: 'deepseek', url: 'https://example.invalid/v1/chat/completions', model: 'fake', headers: {} });
+  plugin.runTask = (work, signal) => work(signal);
+  assert.equal(await plugin.askClassification('Candidate names and supplied answer'), '{"ok":true}');
+  assert.match(request.messages[0].content, /Classify the supplied answer/); assert(!request.messages[0].content.includes('Assess Feynman'));
+  assert.equal(request.messages[1].content, 'Candidate names and supplied answer'); assert.equal(request.stream, false); assert.deepEqual(request.thinking, { type: 'disabled' });
+});
+test('Feynman hints and intermediate stages are not archived, and completion follows transcript saving', async context => {
+  const f = fixture(context), archived = []; f.plugin.settings.noteSaveMode = 'conversation';
+  f.plugin.queueKnowledgeArchive = (...args) => { assert(f.conversations.at(-1).meta.summary.includes('This round passed')); archived.push(args); };
+  await f.send('Force and acceleration'); await f.send(ANSWER); await f.widget.learning.send(null, 'hint');
+  assert.equal(archived.length, 0);
+  await f.send(ANSWER); assert.equal(archived.length, 0); await f.send(ANSWER);
+  assert.equal(f.state().phase, 'complete'); assert.equal(archived.length, 1); assert.equal(archived[0][3].activity, 'feynman');
+  assert(archived[0][2].text.includes('This round passed')); assert.equal(archived[0][1].id, f.thread().at(-2).id);
+});
+test('per-answer learning flags only the completed report for knowledge archiving', async context => {
+  const f = fixture(context);
+  await f.send('Force and acceleration'); await f.send(ANSWER); await f.send(ANSWER); await f.send(ANSWER);
+  assert.equal(f.saved.length, 3); assert.deepEqual(f.saved.map(args => args[2].archiveReady), [false, false, true]);
+  assert.equal(f.saved.at(-1)[2].archiveMessageId, f.thread().at(-2).id);
+});
 test('file rename moves frozen learning progress and cancels only the affected request', async () => {
   const events = new Map(); const plugin = new Plugin();
   plugin.manifest = { dir: 'plugins/current-note-chat' }; plugin.loadData = async () => ({});

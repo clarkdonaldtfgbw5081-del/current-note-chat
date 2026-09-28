@@ -1,9 +1,9 @@
 {
   "id": "current-note-chat",
   "name": "Screen and File QA",
-  "version": "0.13.7",
+  "version": "0.14.0",
   "minAppVersion": "1.13.0",
-  "description": "Ask AI about your screen or files, practise concepts with Feynman learning, and automatically save each conversation to a note.",
+  "description": "Ask AI about your screen or files, practise concepts with Feynman learning, save conversations and organize answers into topic notes.",
   "author": "clarkdonaldtfgbw5081-del",
   "authorUrl": "https://github.com/clarkdonaldtfgbw5081-del",
   "isDesktopOnly": true
