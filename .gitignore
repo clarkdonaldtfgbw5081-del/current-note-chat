@@ -1,0 +1,13 @@
+/node_modules/
+/.npm-cache/
+/.local-backup/
+/dist/
+/src/generated/
+/main.js
+/pdf.worker.mjs
+/data.json
+/sessions.json
+/coverage/
+*.log
+.DS_Store
+Thumbs.db

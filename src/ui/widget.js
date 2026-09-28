@@ -1,0 +1,284 @@
+const { Component, MarkdownRenderer, Notice, setIcon } = require('obsidian');
+const { L, interfaceLanguage } = require('../i18n');
+const { SCREEN_CHAT_KEY, MAX_QUESTION_CHARS } = require('../constants');
+const { normalizeMathDelimiters } = require('../prompts');
+const { selectRelevantContext } = require('../retrieval');
+const { newMessage, touchSession } = require('../sessions');
+const { abortError, throwIfAborted, withAbort } = require('../tasks');
+const { EditPreviewModal } = require('./edit-preview');
+const { previewScreenshot } = require('./screenshot-preview');
+const { FeynmanLearning } = require('./feynman');
+const { noteSaveMode } = require('../conversation-notes');
+const { buttonContent, iconButton } = require('./elements');
+
+class CurrentNoteChatWidget {
+  constructor(plugin) {
+    this.plugin = plugin;
+    this.busy = false;
+    this.snapshots = new Map();
+    this.streamingElements = new Map();
+    this.learning = new FeynmanLearning(this);
+  }
+  mount() {
+    this.unmounted = false;
+    this.rootEl = document.body.createDiv({ cls: 'current-note-chat-float' });
+    this.launcherEl = this.rootEl.createEl('button', { cls: 'current-note-chat-float__launcher', text: L('问', 'Ask'), attr: { 'aria-label': L('打开屏幕与文件问答', 'Open Screen & File Q&A'), 'aria-expanded': 'false' } });
+    this.launcherEl.setText(''); setIcon(this.launcherEl, 'messages-square');
+    this.launcherEl.addEventListener('click', () => this.setOpen(!this.isOpen));
+    const root = this.rootEl.createDiv({ cls: 'current-note-chat-float__panel current-note-chat' });
+    root.setAttribute('lang', interfaceLanguage());
+    root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', L('屏幕与文件问答', 'Screen & File Q&A'));
+    root.addEventListener('keydown', event => { if (event.key === 'Escape') this.setOpen(false); });
+    const header = root.createDiv({ cls: 'current-note-chat__header' });
+    const brand = header.createDiv({ cls: 'current-note-chat__brand' });
+    const mark = brand.createSpan({ cls: 'current-note-chat__brand-mark', attr: { 'aria-hidden': 'true' } }); setIcon(mark, 'messages-square');
+    const heading = brand.createDiv();
+    this.titleEl = heading.createDiv({ cls: 'current-note-chat__title', text: L('屏幕与文件问答', 'Screen & File Q&A') });
+    this.subtitleEl = heading.createDiv({ cls: 'current-note-chat__subtitle', text: L('理解知识，留下记录', 'Understand. Keep a record.') });
+    const actions = header.createDiv({ cls: 'current-note-chat__header-actions' });
+    this.clearButton = iconButton(actions, L('新对话', 'New chat'), 'plus');
+    this.clearButton.addEventListener('click', () => this.plugin.clearCurrentChat());
+    this.exportButton = iconButton(actions, L('查看笔记', 'View note'), 'file-text');
+    this.exportButton.addEventListener('click', () => noteSaveMode(this.plugin.settings) === 'conversation' ? void this.plugin.openConversationNote() : this.exportCurrentChat());
+    iconButton(actions, L('插件设置', 'Plugin settings'), 'settings-2').addEventListener('click', () => this.plugin.openSettings());
+    iconButton(actions, L('收起', 'Collapse'), 'chevron-down').addEventListener('click', () => this.setOpen(false));
+    const controls = root.createDiv({ cls: 'current-note-chat__controls' });
+    const sourceRow = controls.createDiv({ cls: 'current-note-chat__source-row' });
+    sourceRow.createSpan({ cls: 'current-note-chat__section-label', text: L('提问来源', 'Source') });
+    const modes = sourceRow.createDiv({ cls: 'current-note-chat__modes current-note-chat__sources' });
+    this.modeButtons = {};
+    for (const [mode, text] of [['screen', L('屏幕', 'Screen')], ['file', L('文件', 'File')]]) {
+      const button = modes.createEl('button', { text, attr: { 'aria-pressed': 'false' } });
+      buttonContent(button, text, mode === 'screen' ? 'monitor' : 'file');
+      button.addEventListener('click', async () => {
+        if (this.busy) return;
+        this.plugin.settings.contextMode = mode;
+        await this.plugin.saveSettings(); this.refresh();
+      });
+      this.modeButtons[mode] = button;
+    }
+    this.learning.mount(controls);
+    this.noteEl = controls.createDiv({ cls: 'current-note-chat__note' });
+    this.messagesEl = root.createDiv({ cls: 'current-note-chat__messages', attr: { 'aria-live': 'polite', 'aria-label': L('对话记录', 'Conversation') } });
+    const composer = root.createDiv({ cls: 'current-note-chat__composer' });
+    this.inputEl = composer.createEl('textarea', { cls: 'current-note-chat__input', attr: { 'aria-label': L('问题或笔记修改要求', 'Question or note revision instruction') } });
+    this.inputEl.addEventListener('keydown', event => {
+      if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); void this.sendQuestion(); }
+    });
+    const footer = composer.createDiv({ cls: 'current-note-chat__actions' });
+    const tips = footer.createDiv({ cls: 'current-note-chat__composer-tips' });
+    this.statusEl = tips.createSpan({ cls: 'current-note-chat__status' });
+    tips.createSpan({ cls: 'current-note-chat__keyboard-hint', text: L('Enter 发送 · Shift+Enter 换行', 'Enter to send · Shift+Enter for a new line') });
+    const sendActions = footer.createDiv({ cls: 'current-note-chat__send-actions' });
+    this.editButton = iconButton(sendActions, L('优化/修改笔记', 'Revise note'), 'pencil-line');
+    this.editButton.addEventListener('click', () => void this.editNote());
+    this.sendButton = sendActions.createEl('button', { text: L('发送', 'Send'), cls: 'mod-cta current-note-chat__send' });
+    this.sendButton.addEventListener('click', () => this.busy ? this.cancel() : void this.sendQuestion());
+    this.refresh();
+  }
+  cancel() { this.requestController?.abort(abortError(L('已停止请求。', 'Request stopped.'))); }
+  unmount() {
+    this.unmounted = true; this.cancel();
+    clearTimeout(this._streamRenderTimer); this._streamRenderTimer = null;
+    clearTimeout(this._snapshotExpiryTimer); this._snapshotExpiryTimer = null;
+    this.renderComponent?.unload(); this.renderComponent = null;
+    this.snapshots.clear(); this.streamingElements.clear(); this.rootEl?.remove();
+  }
+  setOpen(open) {
+    if (this.unmounted) return;
+    this.isOpen = open;
+    this.rootEl.toggleClass('is-open', open); this.launcherEl.setAttribute('aria-expanded', String(open));
+    if (open) { this.refresh(); this.inputEl.focus(); }
+    else if (this.plugin.settings.showLauncher !== false) this.launcherEl.focus();
+  }
+  getChatKey() { return this.learning.enabled ? this.learning.key() : this.plugin.settings.contextMode === 'screen' ? SCREEN_CHAT_KEY : this.plugin.activeFile?.path; }
+  refresh() {
+    if (this.unmounted || !this.noteEl) return;
+    this.plugin.settingsTab?.setBusy(this.busy);
+    this.launcherEl.toggleClass('is-hidden', this.plugin.settings.showLauncher === false);
+    const screen = this.plugin.settings.contextMode === 'screen';
+    const file = this.plugin.activeFile;
+    this.noteEl.setText(screen ? L('截取当前显示器，画面可能包含其他应用窗口。', 'Captures the current display, including other app windows.') : file ? `${L('当前文件', 'Current file')}: ${file.path}` : L('请打开支持的文件。', 'Open a supported file.'));
+    if (this.learning.enabled && this.learning.state()?.source?.mode === 'screen') this.noteEl.setText(L('学习资料：本轮固定截图，后续作答会复用这张图。', 'Learning source: the frozen screenshot is reused for this round.'));
+    this.noteEl.setAttribute('title', this.noteEl.textContent || this.noteEl.text || '');
+    this.inputEl.placeholder = screen ? L('询问屏幕内容，或输入笔记修改要求…', 'Ask about the screen, or request a note revision…') : L('询问文件内容，或输入笔记修改要求…', 'Ask about the file, or request a note revision…');
+    this.inputEl.setAttribute('aria-label', L('问题或笔记修改要求', 'Question or note revision instruction'));
+    this.inputEl.disabled = (!screen && !file) || this.busy;
+    this.sendButton.disabled = !this.busy && !screen && !file;
+    buttonContent(this.sendButton, this.busy ? L('停止', 'Stop') : L('发送', 'Send'), this.busy ? 'square' : 'arrow-up');
+    this.clearButton.disabled = !this.getChatKey() || this.busy; this.exportButton.disabled = this.busy;
+    buttonContent(this.clearButton, L('新对话', 'New chat'), 'plus', true);
+    buttonContent(this.exportButton, noteSaveMode(this.plugin.settings) === 'conversation' ? L('查看笔记', 'View note') : L('导出', 'Export'), 'file-text', true);
+    this.editButton.disabled = this.busy || !this.plugin.getEditableMarkdownView();
+    for (const [mode, button] of Object.entries(this.modeButtons)) { button.disabled = this.busy; button.setAttribute('aria-pressed', String(this.plugin.settings.contextMode === mode)); }
+    const provider = { codex: 'Codex CLI', deepseek: 'DeepSeek', openai: 'OpenAI', api: L('自定义 API', 'Custom API') }[this.plugin.settings.backend];
+    this.statusEl.setText(this.busy ? `${provider} · ${L('正在处理', 'Working')}…` : `${provider}${noteSaveMode(this.plugin.settings) === 'conversation' ? ` · ${L('自动记录', 'Auto-save')}` : ''}`);
+    this.learning.refresh();
+    this.renderMessages();
+  }
+  nearBottom() { return this.messagesEl.scrollHeight - this.messagesEl.scrollTop - this.messagesEl.clientHeight < 70; }
+  renderMessages() {
+    if (this.unmounted || !this.messagesEl) return;
+    const key = this.getChatKey();
+    const stick = this._renderKey !== key || this.nearBottom();
+    const previousTop = this.messagesEl.scrollTop;
+    this._renderKey = key;
+    this.renderComponent?.unload(); this.renderComponent = new Component(); this.renderComponent.load();
+    this.messagesEl.empty(); this.streamingElements.clear();
+    const thread = this.plugin.messagesByNote.get(key) || [];
+    if (!thread.length) this.messagesEl.createDiv({ cls: 'current-note-chat__empty', text: this.learning.enabled ? L('输入知识点名称开始费曼学习。', 'Enter a concept to start Feynman learning.') : L('输入问题开始对话。', 'Ask a question to start a conversation.') });
+    for (const message of thread) {
+      const bubble = this.messagesEl.createDiv({ cls: `current-note-chat__message current-note-chat__message--${message.role}` });
+      if (message.role === 'assistant' && !message.error) {
+        const metadata = bubble.createDiv({ cls: 'current-note-chat__message-meta' });
+        metadata.createSpan({ text: L('AI 助手', 'Assistant') });
+        const content = bubble.createDiv({ cls: 'current-note-chat__rendered markdown-rendered' });
+        if (message.streaming) { content.setText(message.text || L('正在等待回答…', 'Waiting for an answer…')); this.streamingElements.set(message.id, content); }
+        else {
+          const component = this.renderComponent;
+          const source = this.learning.enabled ? this.learning.state()?.source?.path || this.learning.sourceKey() : key;
+          void MarkdownRenderer.render(this.plugin.app, normalizeMathDelimiters(message.text), content, source === SCREEN_CHAT_KEY ? '' : source || '', component).catch(() => {
+            if (!this.unmounted && component === this.renderComponent) content.setText(message.text);
+          });
+          const copy = iconButton(metadata, L('复制回答', 'Copy answer'), 'copy'); copy.addClass('current-note-chat__copy');
+          copy.addEventListener('click', async () => {
+            try { await navigator.clipboard.writeText(message.text); new Notice(L('已复制回答。', 'Answer copied.')); }
+            catch { new Notice(L('无法访问剪贴板。', 'Could not access the clipboard.')); }
+          });
+        }
+      } else {
+        bubble.setText(message.text);
+        if (message.error && message.replyTo) {
+          const retry = bubble.createEl('button', { cls: 'current-note-chat__copy', text: L('重试这条问题', 'Retry this question') });
+          retry.disabled = this.busy || (this.learning.enabled && !this.learning.canRetry(message.replyTo));
+          retry.addEventListener('click', () => void this.sendQuestion(message.replyTo));
+        }
+      }
+    }
+    this.messagesEl.scrollTop = stick ? this.messagesEl.scrollHeight : previousTop;
+  }
+  updateStreamingMessage(message, text) {
+    if (this.unmounted) return;
+    message.text = text;
+    if (this._streamRenderTimer) return;
+    this._streamRenderTimer = setTimeout(() => {
+      this._streamRenderTimer = null;
+      if (this.unmounted) return;
+      const content = this.streamingElements.get(message.id);
+      if (!content) return;
+      const stick = this.nearBottom(); content.setText(message.text);
+      if (stick) this.messagesEl.scrollTop = this.messagesEl.scrollHeight;
+    }, 120);
+  }
+  cacheSnapshot(id, snapshot) {
+    const now = Date.now();
+    for (const [key, entry] of this.snapshots) if (now - entry.at > 10 * 60 * 1000) this.snapshots.delete(key);
+    this.snapshots.delete(id); this.snapshots.set(id, { snapshot, at: now });
+    let bytes = [...this.snapshots.values()].reduce((sum, item) => sum + (item.snapshot.screenshot?.length || 0), 0);
+    while (this.snapshots.size > 6 || bytes > 8000000) {
+      const key = this.snapshots.keys().next().value;
+      bytes -= this.snapshots.get(key).snapshot.screenshot?.length || 0; this.snapshots.delete(key);
+    }
+    this.pruneSnapshots();
+  }
+  pruneSnapshots() {
+    clearTimeout(this._snapshotExpiryTimer); this._snapshotExpiryTimer = null;
+    const now = Date.now();
+    for (const [key, entry] of this.snapshots) if (now - entry.at >= 10 * 60 * 1000) this.snapshots.delete(key);
+    if (!this.snapshots.size || this.unmounted) return;
+    const delay = Math.max(1, Math.min(...[...this.snapshots.values()].map(entry => entry.at + 10 * 60 * 1000 - now)));
+    this._snapshotExpiryTimer = setTimeout(() => this.pruneSnapshots(), delay);
+    this._snapshotExpiryTimer?.unref?.();
+  }
+  async sendQuestion(retryId) {
+    if (this.learning.enabled) return this.learning.send(retryId);
+    if (this.busy || this.unmounted) return;
+    const key = this.getChatKey();
+    if (!key) { new Notice(L('请先打开支持的文件。', 'Open a supported file first.')); return; }
+    const thread = this.plugin.messagesByNote.get(key) || [];
+    const userIndex = retryId ? thread.findIndex(item => item.id === retryId && item.role === 'user') : -1;
+    if (retryId && userIndex < 0) return;
+    const question = retryId ? thread[userIndex].text : this.inputEl.value.trim();
+    if (!question) return;
+    if (question.length > MAX_QUESTION_CHARS) { new Notice(L('问题不能超过 8000 字符。', 'Keep the question within 8000 characters.')); return; }
+    const mode = key === SCREEN_CHAT_KEY ? 'screen' : 'file';
+    const file = mode === 'file' ? this.plugin.app.vault.getAbstractFileByPath(key) : null;
+    const history = thread.slice(0, retryId ? userIndex : thread.length).filter(item => !item.error && !item.streaming).slice(-6).map(({ role, text }) => ({ role, text }));
+    const user = retryId ? thread[userIndex] : newMessage('user', question);
+    if (!retryId) { thread.push(user); this.inputEl.value = ''; }
+    const reply = newMessage('assistant', '', { streaming: true, replyTo: user.id });
+    const oldError = retryId ? thread.findIndex(item => item.error && item.replyTo === user.id) : -1;
+    if (oldError >= 0) thread.splice(oldError, 1, reply); else thread.push(reply);
+    touchSession(this.plugin.messagesByNote, key, thread);
+    this.busy = true; this.requestController = new AbortController(); this.refresh();
+    let meta = { mode, source: mode === 'file' ? key : undefined, model: this.plugin.currentModel() };
+    try {
+      await this.plugin.saveConversation?.(key, thread, meta);
+      let snapshot = retryId ? this.snapshots.get(user.id) : null;
+      snapshot = snapshot && Date.now() - snapshot.at < 10 * 60 * 1000 ? snapshot.snapshot : null;
+      const signal = this.requestController.signal;
+      if (!snapshot) {
+        if (retryId) new Notice(L('原始上下文已不可用，将读取当前文件或重新截图。', 'Original context is unavailable; reading the current file or capturing a new screenshot.'));
+        snapshot = { mode, source: mode === 'file' ? key : undefined, question, history };
+        if (mode === 'screen') {
+          this.rootEl.addClass('is-capturing');
+          try {
+            await withAbort(new Promise(resolve => setTimeout(resolve, 180)), signal);
+            snapshot.screenshot = await this.plugin.runTask(inner => this.plugin.captureCurrentScreen(inner), signal);
+          } finally { this.rootEl.removeClass('is-capturing'); }
+        } else {
+          const full = await this.plugin.runTask(inner => this.plugin.readCurrentFile(file, inner), signal);
+          const context = selectRelevantContext(full, question);
+          snapshot.partial = context.partial;
+          snapshot.noteText = context.partial ? `The following are excerpts and may not cover the full file.\n\n${context.text}` : context.text;
+        }
+        throwIfAborted(signal); this.cacheSnapshot(user.id, snapshot);
+      }
+      if (snapshot.screenshot && this.plugin.settings.previewScreenshot) {
+        const confirmed = await previewScreenshot(this.plugin.app, snapshot.screenshot, signal);
+        throwIfAborted(signal); if (!confirmed) throw abortError(L('已取消发送截图。', 'Screenshot sending cancelled.'));
+      }
+      meta = { mode, source: snapshot.source, model: this.plugin.currentModel() };
+      const onDelta = partial => this.updateStreamingMessage(reply, partial);
+      const answer = snapshot.screenshot
+        ? await this.plugin.askScreen(snapshot.screenshot, snapshot.history, question, onDelta, signal)
+        : await this.plugin.ask(snapshot.source, snapshot.noteText, snapshot.history, question, onDelta, signal);
+      throwIfAborted(signal); if (this.unmounted) return;
+      reply.streaming = false;
+      reply.text = snapshot.partial ? `${answer}\n\n${L('（本次基于相关片段回答，未涵盖全文。）', '(Answered from selected excerpts, not the complete file.)')}` : answer;
+      if (noteSaveMode(this.plugin.settings) === 'answer') void this.plugin.saveQAToNote(question, reply.text, meta);
+    } catch (error) {
+      if (!this.unmounted) { reply.streaming = false; reply.error = true; reply.text = `${L('无法回答', 'Could not answer')}: ${error.message || error}`; }
+    } finally {
+      clearTimeout(this._streamRenderTimer); this._streamRenderTimer = null;
+      const savedKey = mode === 'file' ? file?.path || key : key;
+      if (!this.unmounted && this.plugin.messagesByNote.get(savedKey) === thread) await this.plugin.saveConversation?.(savedKey, thread, { ...meta, source: mode === 'file' ? savedKey : undefined });
+      this.busy = false; this.requestController = null;
+      if (!this.unmounted) { this.plugin.queueSaveSessions(); this.refresh(); }
+    }
+  }
+  async editNote() {
+    if (this.busy || this.unmounted) return;
+    const instruction = this.inputEl.value.trim() || L('优化笔记结构、语言和排版，保留原意、公式、引用和链接。', 'Improve structure, wording and formatting, retaining meaning, formulas, references and links.');
+    if (instruction.length > MAX_QUESTION_CHARS) { new Notice(L('修改要求不能超过 8000 字符。', 'Keep the revision request within 8000 characters.')); return; }
+    this.busy = true; this.requestController = new AbortController(); this.refresh();
+    try {
+      const proposal = await this.plugin.proposeNoteEdit(instruction, this.requestController.signal);
+      throwIfAborted(this.requestController.signal);
+      if (!this.unmounted) new EditPreviewModal(this.plugin, proposal).open();
+    } catch (error) { if (!this.unmounted) new Notice(`${L('无法生成修改', 'Could not draft revision')}: ${error.message || error}`); }
+    finally { this.busy = false; this.requestController = null; if (!this.unmounted) this.refresh(); }
+  }
+  exportCurrentChat() {
+    if (this.busy || this.unmounted) return;
+    const key = this.getChatKey();
+    const thread = (this.plugin.messagesByNote.get(key) || []).filter(item => !item.error && !item.streaming && item.text.trim());
+    if (!thread.length) { new Notice(L('没有可导出的对话。', 'There is no conversation to export.')); return; }
+    if (this.learning.enabled) {
+      const state = this.learning.state();
+      const summary = newMessage('assistant', this.learning.report(state));
+      void this.plugin.exportChatToNote([...thread, summary], { mode: this.plugin.settings.contextMode, source: state?.source?.path || (this.learning.sourceKey() === SCREEN_CHAT_KEY ? null : this.learning.sourceKey()), activity: 'feynman' });
+    } else void this.plugin.exportChatToNote(thread, { mode: key === SCREEN_CHAT_KEY ? 'screen' : 'file', source: key === SCREEN_CHAT_KEY ? null : key });
+  }
+}
+module.exports = { CurrentNoteChatWidget };

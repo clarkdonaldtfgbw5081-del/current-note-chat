@@ -1,0 +1,29 @@
+{
+  "name": "current-note-chat",
+  "version": "0.13.2",
+  "private": true,
+  "description": "Screen and file Q&A for Obsidian desktop, with Feynman learning and reviewed note revisions.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/build.mjs --watch",
+    "lint": "eslint src scripts test",
+    "pretest": "node scripts/build.mjs --worker-only",
+    "test": "node --test test/*.test.cjs",
+    "check": "npm run lint && npm test && npm run build && node scripts/verify-release.mjs && node scripts/smoke-install.cjs",
+    "package": "npm run check && node scripts/package.mjs"
+  },
+  "dependencies": {
+    "pdf-parse": "2.4.5",
+    "word-extractor": "1.0.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "esbuild": "0.28.2",
+    "eslint": "10.11.0",
+    "globals": "16.5.0"
+  }
+}

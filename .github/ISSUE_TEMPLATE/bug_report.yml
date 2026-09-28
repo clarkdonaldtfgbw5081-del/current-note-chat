@@ -1,0 +1,22 @@
+name: Bug report
+description: Report a reproducible problem without sharing private notes or secrets.
+body:
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Plugin version, Obsidian version, operating system, backend and model. Do not include API keys.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Explain the expected and actual results. Use synthetic notes or screenshots.
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Error message
+      description: Remove tokens, note contents, account identifiers and private file paths.
