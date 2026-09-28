@@ -93,21 +93,21 @@ jobs:
             dist/SHA256SUMS.txt
       # Requested one-time cleanup: keep the newly checked release and commit/tag
       # history. Exact release IDs prevent later releases from being deleted.
-      - name: Remove superseded releases after 0.13.6 is published
-        if: needs.prepare.outputs.version == '0.13.6'
+      - name: Remove superseded releases after 0.13.7 is published
+        if: needs.prepare.outputs.version == '0.13.7'
         uses: actions/github-script@v7
         with:
           script: |
-            const { data: latest } = await github.rest.repos.getReleaseByTag({ ...context.repo, tag: '0.13.6' });
+            const { data: latest } = await github.rest.repos.getReleaseByTag({ ...context.repo, tag: '0.13.7' });
             if (latest.draft || latest.prerelease) throw new Error('Latest release is not published.');
             for (const name of ['main.js', 'manifest.json', 'styles.css']) {
               if (!latest.assets.some(asset => asset.name === name && asset.size > 0)) throw new Error(`Missing ${name}`);
             }
-            const old = [398178217, 398195972, 398273491, 398283694];
+            const old = [398311363];
             for (const release_id of old) {
               try {
                 const { data: release } = await github.rest.repos.getRelease({ ...context.repo, release_id });
-                if (!['0.13.2', '0.13.3', '0.13.4', '0.13.5'].includes(release.tag_name)) throw new Error('Unexpected release identity.');
+                if (!['0.13.6'].includes(release.tag_name)) throw new Error('Unexpected release identity.');
                 await github.rest.repos.deleteRelease({ ...context.repo, release_id });
                 core.notice(`Deleted superseded release ${release.tag_name}; tag and commits retained.`);
               } catch (error) {

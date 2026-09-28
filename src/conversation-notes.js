@@ -18,7 +18,8 @@ function loadNoteRecords(raw) {
   for (const [key, item] of Object.entries(raw).slice(-MAX_SESSION_KEYS)) {
     if (!key || key.length > 4096 || !item || !/^[0-9a-f-]{36}$/i.test(item.id) || (item.path !== null && !validNotePath(item.path)) || typeof item.created !== 'string' || !Number.isFinite(Date.parse(item.created))) continue;
     const hashes = Object.fromEntries(Object.entries(item.hashes || {}).slice(-160).filter(([id, value]) => /^[a-f0-9]{64}$/.test(id) && typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)));
-    records.set(key, { id: item.id, path: item.path, created: new Date(item.created).toISOString(), hashes });
+    const ranges = Object.fromEntries(Object.entries(item.ranges || {}).slice(-160).filter(([id, range]) => Object.hasOwn(hashes, id) && range && Number.isSafeInteger(range.start) && Number.isSafeInteger(range.end) && range.start >= 0 && range.end > range.start && range.end <= 32 * 1024 * 1024 && range.hash === hashes[id]).map(([id, range]) => [id, { start: range.start, end: range.end, hash: range.hash }]));
+    records.set(key, { id: item.id, path: item.path, created: new Date(item.created).toISOString(), hashes, ranges, clean: item.clean === true });
   }
   return records;
 }
@@ -84,28 +85,62 @@ function blocksFor(thread, summary, activity = 'qa') {
   if (summary) blocks.set(digest('learning-summary'), noteBody(summary) + '\n');
   return blocks;
 }
-function mergeBlocks(content, blocks, hashes) {
+function cleanLegacyNote(content, record) {
+  const migrated = migrateLegacyMarkers(content);
+  if (!migrated.includes(marker('conversation', record.id))) return { content, ranges: record.ranges || {} };
+  const front = /^---\r?\n[\s\S]*?\r?\n---(?=\r?\n)/.exec(migrated);
+  const text = front ? migrated.replace(front[0], front[0].replace(/^conversation_id:.*\r?\n/gm, '')) : migrated;
+  const tokens = /^\[cnc-(conversation|message|end)-([0-9a-f-]+)\]: #\r?(?:\n|$)/gm;
+  let clean = '', cursor = 0, active = null;
+  const ranges = {};
+  for (const token of text.matchAll(tokens)) {
+    clean += text.slice(cursor, token.index);
+    cursor = token.index + token[0].length;
+    if (token[1] === 'message') active = { id: token[2], start: clean.length };
+    else if (token[1] === 'end' && active?.id === token[2]) {
+      const raw = clean.slice(active.start);
+      const candidates = [raw, raw.replace(/^\r?\n/, ''), raw.replace(/^(?:\r?\n){1,2}/, '')].flatMap(body => [body, body.replace(/(?:\r?\n){2}$/, '\n')]);
+      const body = candidates.find(candidate => digest(candidate) === record.hashes[active.id]);
+      if (body) {
+        const start = active.start + raw.indexOf(body);
+        ranges[active.id] = { start, end: start + body.length, hash: digest(body) };
+      }
+      active = null;
+    }
+  }
+  clean += text.slice(cursor);
+  return { content: clean, ranges };
+}
+function mergeBlocks(content, blocks, record) {
   let merged = content;
+  const hashes = { ...record.hashes }, ranges = { ...record.ranges };
+  // Positions and hashes live in plugin data, never in the generated Markdown.
+  // If the user edits or shifts a saved block, leave it alone rather than guess
+  // which paragraph to overwrite. New turns can still be appended safely.
+  for (const [id, range] of Object.entries(ranges)) {
+    if (digest(merged.slice(range.start, range.end)) !== range.hash) delete ranges[id];
+  }
   for (const [id, body] of blocks) {
     const nextHash = digest(body);
-    // Leave handwritten changes to an unchanged turn intact, including after restart.
     if (hashes[id] === nextHash) continue;
-    const start = marker('message', id);
-    const end = marker('end', id);
-    const block = `${start}\n\n${body}\n${end}`;
-    const from = merged.indexOf(start), to = merged.indexOf(end, from);
-    if (from >= 0 && to >= from) {
-      const currentBody = merged.slice(from + start.length, to).replace(/^\r?\n/, '').replace(/\r\n/g, '\n');
-      // A format migration may change the generated body. Preserve a turn that
-      // the user edited after it was last written instead of restyling over it.
-      const withoutLeadingBlank = currentBody.replace(/^\n/, '');
-      const candidates = [currentBody, withoutLeadingBlank, currentBody.replace(/\n\n$/, '\n'), withoutLeadingBlank.replace(/\n\n$/, '\n')];
-      if (hashes[id] && !candidates.some(candidate => digest(candidate) === hashes[id])) continue;
-      merged = merged.slice(0, from) + block + merged.slice(to + end.length);
+    const range = ranges[id];
+    if (range) {
+      const delta = body.length - (range.end - range.start);
+      merged = merged.slice(0, range.start) + body + merged.slice(range.end);
+      for (const [otherId, other] of Object.entries(ranges)) {
+        if (otherId !== id && other.start >= range.end) ranges[otherId] = { ...other, start: other.start + delta, end: other.end + delta };
+      }
+      ranges[id] = { start: range.start, end: range.start + body.length, hash: nextHash };
+    } else {
+      if (Object.hasOwn(hashes, id)) continue;
+      const start = merged.length + (merged.endsWith('\n\n') ? 0 : merged.endsWith('\n') ? 1 : 2);
+      merged += '\n'.repeat(start - merged.length) + body;
+      ranges[id] = { start, end: start + body.length, hash: nextHash };
     }
-    else merged = merged.trimEnd() + '\n\n' + block + '\n';
+    hashes[id] = nextHash;
   }
-  return merged;
+  const retained = Object.fromEntries(Object.entries(hashes).slice(-160));
+  return { content: merged, hashes: retained, ranges: Object.fromEntries(Object.entries(ranges).filter(([id]) => Object.hasOwn(retained, id))) };
 }
 class OwnershipError extends Error {}
 class ConversationNotes {
@@ -125,7 +160,7 @@ class ConversationNotes {
     }
   }
   deleteNote(path) {
-    for (const record of this.records.values()) if (record.path === path || record.path?.startsWith(path + '/')) { record.path = null; record.hashes = {}; }
+    for (const record of this.records.values()) if (record.path === path || record.path?.startsWith(path + '/')) { record.path = null; record.hashes = {}; record.ranges = {}; record.clean = false; }
   }
   save(key, thread, meta = {}) {
     if (this.plugin.disposed || noteSaveMode(this.plugin.settings) !== 'conversation' || !key || !thread.some(message => message.role === 'user' && message.text.trim())) return Promise.resolve(null);
@@ -142,14 +177,20 @@ class ConversationNotes {
   async write(record, snapshot) {
     if (this.plugin.disposed) return null;
     const vault = this.plugin.app.vault;
-    const owner = marker('conversation', record.id);
+    let result;
     let file = record.path ? vault.getAbstractFileByPath(record.path) : null;
     if (file instanceof TFile && file.extension.toLowerCase() === 'md') {
       try {
         await vault.process(file, content => {
           const migrated = migrateLegacyMarkers(content);
-          if (!migrated.includes(owner)) throw new OwnershipError('The note no longer has its conversation marker.');
-          return styleNote(mergeBlocks(migrated, snapshot.blocks, record.hashes));
+          const front = /^---\r?\n[\s\S]*?\r?\n---(?=\r?\n)/.exec(content)?.[0] || '';
+          if (!migrated.includes(marker('conversation', record.id)) && !(record.clean && /^type: conversation\r?$/m.test(front))) throw new OwnershipError('The note is no longer a conversation note.');
+          const legacy = cleanLegacyNote(content, record);
+          // Insert styles before calculating offsets so positions remain exact.
+          const styled = styleNote(legacy.content), shift = styled.length - legacy.content.length;
+          const ranges = Object.fromEntries(Object.entries(legacy.ranges).map(([id, range]) => [id, { ...range, start: range.start + shift, end: range.end + shift }]));
+          result = mergeBlocks(styled, snapshot.blocks, { hashes: record.hashes, ranges });
+          return result.content;
         });
       } catch (error) {
         if (!(error instanceof OwnershipError)) throw error;
@@ -167,14 +208,14 @@ class ConversationNotes {
       const base = `${folder}/${stamp} ${title} ${record.id.slice(0, 8)}`;
       let path = `${base}.md`, suffix = 2;
       while (vault.getAbstractFileByPath(path)) path = `${base} (${suffix++}).md`;
-      const frontmatter = ['---', `date: ${record.created}`, 'type: conversation', `conversation_id: ${JSON.stringify(record.id)}`, `mode: ${snapshot.meta.mode === 'screen' ? 'screen' : 'file'}`, `activity: ${snapshot.meta.activity === 'feynman' ? 'feynman' : 'qa'}`, ...(snapshot.meta.source ? [`source: ${JSON.stringify(snapshot.meta.source)}`] : []), ...(snapshot.meta.model ? [`model: ${JSON.stringify(snapshot.meta.model)}`] : []), '---', '', owner, '', `# ${safeBody(title)}`, ''].join('\n');
-      const content = styleNote(mergeBlocks(frontmatter, snapshot.blocks, {}));
-      await vault.create(path, content);
+      const frontmatter = ['---', `date: ${record.created}`, 'type: conversation', `mode: ${snapshot.meta.mode === 'screen' ? 'screen' : 'file'}`, `activity: ${snapshot.meta.activity === 'feynman' ? 'feynman' : 'qa'}`, ...(snapshot.meta.source ? [`source: ${JSON.stringify(snapshot.meta.source)}`] : []), ...(snapshot.meta.model ? [`model: ${JSON.stringify(snapshot.meta.model)}`] : []), '---', '', `# ${safeBody(title)}`, ''].join('\n');
+      result = mergeBlocks(styleNote(frontmatter), snapshot.blocks, { hashes: {}, ranges: {} });
+      await vault.create(path, result.content);
       record.path = path; record.hashes = {};
     }
-    record.hashes = Object.fromEntries([...Object.entries(record.hashes), ...[...snapshot.blocks].map(([id, body]) => [id, digest(body)])].slice(-160));
+    record.hashes = result.hashes; record.ranges = result.ranges; record.clean = true;
     this.plugin.queueSaveSessions();
     return record.path;
   }
 }
-module.exports = { noteSaveMode, loadNoteRecords, noteBody, formatNoteMessage, migrateLegacyMarkers, styleNote, ConversationNotes };
+module.exports = { noteSaveMode, loadNoteRecords, noteBody, formatNoteMessage, migrateLegacyMarkers, cleanLegacyNote, styleNote, ConversationNotes };

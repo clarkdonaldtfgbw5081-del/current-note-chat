@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.7
+
+- Remove internal conversation/message/end markers entirely from generated Markdown, including source mode. Store block positions and hashes in plugin data instead.
+- Remove legacy HTML, percent-comment and reference-definition markers when saving an existing conversation; keep the same note and protect handwritten changes.
+- Preserve retry updates and history retention without embedding opaque IDs in note content or frontmatter. When edits shift a saved block, preserve it instead of guessing which text to replace.
+
 ## 0.13.6
 
 - Replace synchronization comments with invisible standard Markdown reference definitions, separated from callouts and prose by blank lines. Migrate both older HTML and percent-comment markers.

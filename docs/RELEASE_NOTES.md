@@ -1,15 +1,14 @@
-# Screen and File QA 0.13.6
+# Screen and File QA 0.13.7
 
-Fixes synchronization markers appearing as visible text in generated notes and improves note typography.
+Removes internal synchronization IDs from generated notes entirely. Notes contain only their metadata, title, questions and answers, in both reading and source views.
 
-- Internal markers use unused standard Markdown reference definitions, with blank lines separating them from questions and answers. Both HTML and percent-comment markers migrate when an existing conversation is saved.
-- Questions appear in a subtle card; AI answer labels are compact. Model headings stay below the note title, with fenced code unchanged.
-- Generated notes opt into theme-aware typography, readable spacing and horizontally scrollable display formulas through a CSS class. Other notes keep their theme styles.
-- Mathematical notation is normalized before saving. Handwritten edits remain protected.
-- Adds tests of rendered Markdown, marker migration, code preservation and answer retries.
+- Synchronization positions and hashes are stored in plugin data, not Markdown.
+- Existing HTML, percent-comment and reference-definition markers migrate out of saved conversations without creating another note.
+- Same-note automatic saving, answer retries and history retention continue to work. Handwritten changes are preserved. If edits shift a generated block, the plugin leaves that block alone rather than guessing which text to replace; new turns still append safely.
+- Keeps the scoped note typography, question cards and normalized mathematical notation.
 
-Requires Obsidian 1.13.0 or newer on desktop. Reload the plugin after updating, then use **View note** to migrate a saved conversation. Internal reference definitions are still visible in source mode, as expected for Markdown; reading view should contain only the note content.
+Restart Obsidian or reload the plugin after updating. Use **View note** to migrate an existing active conversation. Archived notes can be cleaned locally without regenerating their answers.
 
-For manual installation, copy main.js, manifest.json and styles.css into .obsidian/plugins/current-note-chat/. AI providers may require separate accounts and charge for requests. Screen questions require an image-capable provider/model.
+Requires Obsidian 1.13.0 or newer on desktop. For manual installation, copy main.js, manifest.json and styles.css into .obsidian/plugins/current-note-chat/. AI providers may charge for requests; screen questions require an image-capable model.
 
-Release publication requires Windows, macOS and Linux checks, 72 automated regressions, the three-asset PDF smoke test and build attestations. Actual Obsidian rendering under every theme and cross-platform screen capture still need real-world verification. Superseded Release entries are removed after this version publishes; source history and tags are retained.
+Release checks include 74 automated regressions, a three-asset PDF smoke test, Windows/macOS/Linux validation and GitHub artifact attestations. End-to-end provider behavior and every Obsidian theme still require real-world verification.

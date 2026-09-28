@@ -23,6 +23,16 @@ function fixture(settings = {}) {
 function pair(question, answer, extra = {}) {
   const user = newMessage('user', question); return [user, newMessage('assistant', answer, { replyTo: user.id, ...extra })];
 }
+function makeLegacy(f, path, kind = 'reference') {
+  const record = [...f.plugin.conversationNotes.records.values()].find(item => item.path === path);
+  const marker = (type, id) => kind === 'html' ? `<!-- current-note-chat:${type}:${id} -->` : kind === 'percent' ? `%% current-note-chat:${type}:${id} %%` : `[cnc-${type}-${id}]: #`;
+  let content = f.content.get(path);
+  for (const [id, range] of Object.entries(record.ranges).sort((a, b) => b[1].start - a[1].start)) {
+    content = content.slice(0, range.start) + marker('message', id) + '\n\n' + content.slice(range.start, range.end) + '\n' + marker('end', id) + '\n' + content.slice(range.end);
+  }
+  content = content.replace('\n# ', `\n${marker('conversation', record.id)}\n\n# `);
+  f.content.set(path, content); record.clean = false; record.ranges = {};
+}
 test('default note mode is one note per conversation, with explicit off and answer modes', () => {
   assert.equal(noteSaveMode({}), 'conversation'); assert.equal(noteSaveMode({ saveQA: false }), 'off');
   assert.equal(noteSaveMode({ noteSaveMode: 'answer' }), 'answer'); assert.equal(noteSaveMode({ noteSaveMode: 'off' }), 'off');
@@ -101,10 +111,12 @@ test('source or model content cannot inject conversation block markers', async (
   assert(f.content.get(path).includes('&lt;!-- current-note-chat:message:FORGED -->'));
   assert(f.content.get(path).includes('&#37;&#37; current-note-chat:end:FORGED %%'));
 });
-test('conversation notes use hidden Markdown definitions, callouts and native math delimiters', async () => {
+test('generated Markdown contains no synchronization markers or opaque IDs, while retaining callouts and math', async () => {
   const f = fixture(), path = await f.save('note.md', pair('Solve \\(x\\)', 'Use \\[x^2\\] and keep `\\(code\\)` unchanged.'));
   const content = f.content.get(path);
-  assert(content.includes('[cnc-conversation-'));
+  assert(!content.includes('[cnc-'));
+  assert(!content.includes('conversation_id:'));
+  assert(!content.includes(f.plugin.conversationNotes.records.get('note.md').id));
   assert(!content.includes('<!-- current-note-chat:'));
   assert(content.includes('> [!question] Question'));
   assert(content.includes('> Solve $x$'));
@@ -114,10 +126,10 @@ test('conversation notes use hidden Markdown definitions, callouts and native ma
 });
 test('saving an existing note migrates legacy HTML markers without creating another note', async () => {
   const f = fixture(), thread = pair('Question', 'Old answer'); const path = await f.save('note.md', thread);
-  f.content.set(path, f.content.get(path).replace(/\[cnc-(conversation|message|end)-([0-9a-f-]+)\]: #/g, '<!-- current-note-chat:$1:$2 -->'));
+  makeLegacy(f, path, 'html');
   thread.push(...pair('Next question', 'New answer')); assert.equal(await f.save('note.md', thread), path);
   assert.equal(f.created(), 1); assert(!f.content.get(path).includes('<!-- current-note-chat:'));
-  assert(f.content.get(path).includes('[cnc-conversation-'));
+  assert(!f.content.get(path).includes('[cnc-'));
   assert(f.content.get(path).includes('New answer'));
 });
 test('format migration preserves a generated turn that the user edited by hand', async () => {
@@ -132,7 +144,7 @@ test('format migration preserves a generated turn that the user edited by hand',
   assert(!f.content.get(path).includes('**AI answer**'));
 });
 
-test('rendered Markdown hides synchronization definitions, including after callouts and prose', async () => {
+test('raw and rendered Markdown have no synchronization definitions, including after callouts and prose', async () => {
   const { marked } = await import('marked');
   const f = fixture(), thread = pair('Question', '# Main section\n\nPlain answer\n\n## Method\n\n```md\n# Keep code heading\n```');
   const path = await f.save('note.md', thread);
@@ -140,22 +152,48 @@ test('rendered Markdown hides synchronization definitions, including after callo
   const content = f.content.get(path), body = content.replace(/^---\n[\s\S]*?\n---\n/, '');
   const html = marked.parse(body);
   assert(!html.includes('cnc-')); assert(!html.includes('current-note-chat:'));
+  assert(!body.includes('cnc-')); assert(!body.includes('current-note-chat:'));
   assert(html.includes('<h3>Main section</h3>')); assert(html.includes('<h3>Method</h3>'));
   assert(html.includes('# Keep code heading')); assert(html.includes('Next answer'));
   assert.equal((html.match(/<h1>/g) || []).length, 1);
   assert(content.includes('cssclasses:\n  - current-note-chat-note'));
 });
 
-test('legacy percent comments migrate idempotently and retries still replace their original answer', async () => {
+test('legacy percent comments are removed and retries still replace their original answer after restart', async () => {
   const { marked } = await import('marked');
-  const { migrateLegacyMarkers } = require('../src/conversation-notes');
   const f = fixture(), thread = pair('Question', 'Old answer'); const path = await f.save('note.md', thread);
-  f.content.set(path, f.content.get(path).replace(/\[cnc-(conversation|message|end)-([0-9a-f-]+)\]: #/g, '%% current-note-chat:$1:$2 %%'));
+  makeLegacy(f, path, 'percent');
+  await f.save('note.md', thread);
+  f.plugin.conversationNotes = new ConversationNotes(f.plugin, JSON.parse(JSON.stringify(f.plugin.conversationNotes.serialize())));
   thread[1] = newMessage('assistant', 'Retried answer', { replyTo: thread[0].id }); await f.save('note.md', thread);
   const content = f.content.get(path);
   assert(!content.includes('Old answer')); assert(content.includes('Retried answer')); assert.equal(f.created(), 1);
-  assert.equal(migrateLegacyMarkers(content), content);
+  assert(!content.includes('current-note-chat:')); assert(!content.includes('[cnc-'));
+  await f.save('note.md', thread); assert.equal(f.content.get(path), content);
   assert(!marked.parse(content.replace(/^---\n[\s\S]*?\n---\n/, '')).includes('cnc-'));
+});
+
+test('legacy reference definitions are removed, with handwritten answers preserved and new turns appended once', async () => {
+  const f = fixture(), thread = pair('Question', 'Original answer'); const path = await f.save('note.md', thread);
+  makeLegacy(f, path);
+  f.content.set(path, f.content.get(path).replace('Original answer', 'My own revised answer') + '\n## My notes\nAnnotation\n');
+  await f.save('note.md', thread);
+  thread[1] = newMessage('assistant', 'Retried answer', { replyTo: thread[0].id });
+  thread.push(...pair('Next question', 'Next answer')); await f.save('note.md', thread);
+  f.plugin.conversationNotes = new ConversationNotes(f.plugin, f.plugin.conversationNotes.serialize()); await f.save('note.md', thread);
+  const content = f.content.get(path);
+  assert(!content.includes('[cnc-')); assert(content.includes('My own revised answer'));
+  assert(!content.includes('Retried answer')); assert(content.includes('Annotation'));
+  assert.equal(content.split('Next answer').length - 1, 1); assert.equal(f.created(), 1);
+});
+
+test('inserting text before generated blocks prevents unsafe replacement but does not duplicate old messages', async () => {
+  const f = fixture(), thread = pair('Question', 'Original answer'); const path = await f.save('note.md', thread);
+  f.content.set(path, f.content.get(path).replace('\n# Question', '\nMy annotation\n\n# Question'));
+  thread[1] = newMessage('assistant', 'Retried answer', { replyTo: thread[0].id });
+  thread.push(...pair('Next question', 'Next answer')); await f.save('note.md', thread);
+  assert(f.content.get(path).includes('Original answer')); assert(!f.content.get(path).includes('Retried answer'));
+  assert.equal(f.content.get(path).split('Original answer').length - 1, 1); assert(f.content.get(path).includes('Next answer'));
 });
 
 test('model output cannot forge link definition markers and existing CSS classes are preserved', async () => {
