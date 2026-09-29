@@ -527,3 +527,20 @@
   .current-note-chat { padding: 12px; gap: 8px; }
   .current-note-chat__subtitle, .current-note-chat__keyboard-hint { display: none; }
 }
+
+.current-note-chat__queue { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+.current-note-chat__queue.is-empty { display: none; }
+.current-note-chat__queue-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+.current-note-chat__queue-icon { display: inline-flex; flex: none; }
+.current-note-chat__queue-icon .svg-icon { width: 13px; height: 13px; }
+.current-note-chat__queue-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.current-note-chat__queue-remove { flex: none; }

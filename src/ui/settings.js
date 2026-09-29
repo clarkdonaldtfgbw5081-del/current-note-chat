@@ -34,6 +34,12 @@ const CurrentNoteChatSettings = class extends PluginSettingTab {
       this.plugin.settings.qaFolder = value.trim();
       await this.plugin.saveSettings();
     }));
+    new Setting(containerEl).setName(L('将提问写入被提问的笔记', 'Append questions to the asked note')).setDesc(L('回答完成后追加到被提问的 Markdown 笔记；屏幕提问绑定提交或排队时打开的笔记，截图存为附件再嵌入。此开关独立于对话自动保存。AI 问答与知识库目录中的笔记不会被写入。', 'Append to the asked Markdown note after completion. Screen questions use the note open when submitted or queued; screenshots become embedded attachments. This toggle is independent of conversation auto-save. Notes in the AI Q&A and knowledge folders are protected.')).addToggle(toggle => toggle.setValue(this.plugin.settings.qaAppendSource !== false).onChange(async value => {
+      this.plugin.settings.qaAppendSource = value; await this.plugin.saveSettings();
+    }));
+    new Setting(containerEl).setName(L('写入提问时包含 AI 回答', 'Include the AI answer when appending')).setDesc(L('关闭后只在笔记里记录问题本身；完整回答仍在对话笔记中。', 'Off records only the question; the full answer stays in the conversation note.')).addToggle(toggle => toggle.setValue(this.plugin.settings.qaAppendAnswer !== false).onChange(async value => {
+      this.plugin.settings.qaAppendAnswer = value; await this.plugin.saveSettings();
+    }));
     new Setting(containerEl).setName(L('AI 自动分类归档', 'AI classification and archiving')).setDesc(L('完整回答保存后，额外请求一次当前 AI，提炼知识点并归入知识目录中的主题笔记。只发送问题、回答和候选笔记名称；原对话保留。不确定时放入“待整理”。费曼学习完成后归档通过记录。关闭自动保存时也停止自动归档。', 'After saving a complete answer, make one additional request to the current AI to summarize and file it in a topic note. Only the question, answer and candidate note names are sent; the transcript stays intact. Uncertain results go to Inbox. Feynman rounds archive on completion. Turning off automatic saving also stops automatic archiving.')).addToggle(toggle => toggle.setValue(this.plugin.settings.autoClassify).onChange(async value => {
       this.plugin.settings.autoClassify = value; if (!value) this.plugin.knowledgeNotes?.cancel(); await this.plugin.saveSettings(); this.plugin.refreshViews();
     }));

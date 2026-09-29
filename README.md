@@ -6,12 +6,6 @@ An Obsidian desktop plugin for asking AI about your screen or the current file, 
 
 The plugin is free and open source. AI providers may require their own account, API key or subscription and charge for requests. Supported remote services are OpenAI, DeepSeek, the service used by your signed-in Codex CLI and any compatible endpoint you configure. The plugin has no analytics or advertising.
 
-## 45-second video
-
-[![Watch the 45-second introduction](docs/media/promo-0.15.0/cover.png)](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/download/0.15.0/Screen-and-File-QA-0.15.0-45s.mp4)
-
-[Watch or download the MP4](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/download/0.15.0/Screen-and-File-QA-0.15.0-45s.mp4) — 1080p, 16:9, 30 fps, Chinese captions, no audio. Screen/file Q&A → conversation notes → topic archiving → Feynman learning → spaced review. Uses simulated content in the 0.15.0 browser demonstration; the actual interface follows your Obsidian theme.
-
 ![Knowledge note with source links](docs/images/guide-knowledge-0.15.0.jpg)
 
 *Browser walkthrough using the 0.15.0 UI/writer code and synthetic content. The actual panel follows your Obsidian theme; controls support Chinese and English. [See six version-labelled workflow images](docs/SCREENSHOTS.md), including archive recovery and review plans.*
@@ -30,6 +24,8 @@ Community review may flag filesystem access and child processes used by the opti
 - **Streaming:** stream answers where supported. Authentication and ambiguous network failures never trigger automatic resending. A setting enables non-streaming Obsidian requests when browser streaming is blocked.
 - **Persistent history:** retain up to 80 messages per conversation and 40 recent conversations in memory and on disk.
 - **Automatic conversation notes:** each conversation updates one Markdown note by default, including questions, responses and learning progress. Choose separate notes per answer or disable automatic saving in settings.
+- **Write back to the asked note:** after an answer completes, the question is appended to the end of the asked Markdown note (screen questions go to the Markdown note open when submitted or queued). Screenshots are saved as vault attachments using Obsidian's attachment settings and embedded before the question. Toggle whether the AI answer is included; notes inside AI Q&A and knowledge folders are never modified.
+- **Question queue:** the composer stays editable while an answer streams. Enter queues up to five pending questions as visible tasks that run automatically in order afterwards; a queued screenshot question is captured when it runs, not when it was typed.
 - **AI knowledge archiving:** summarize complete answers into topic notes within AI Knowledge, reuse an existing topic when its title clearly matches, and send uncertain classifications to Inbox.
 - **Providers:** Codex CLI, DeepSeek, OpenAI and OpenAI-compatible Chat Completions endpoints. Text-only and image capabilities are checked separately.
 - **Bilingual interface:** English and Simplified Chinese, following the Obsidian locale.
@@ -71,8 +67,9 @@ Codex runs an ephemeral read-only session in a temporary directory. It locates a
 2. Select **Screen** or **File** under Source, enter a question and press Send. Enter sends; Shift+Enter inserts a new line.
 3. In Screen Q&A, inspect the preview and choose **Send this screenshot** or Cancel.
 4. Use **Stop** to stop waiting, or **Retry this question** on a failed response. Retried screenshots are previewed again when previews are enabled.
-5. For editing, open a Markdown note, optionally select text, enter an instruction and choose the pencil icon (**Revise note**). Inspect the original/revised text before applying.
-6. Conversations automatically update a note in **AI Q&A**. The header's file icon (**View note**) opens it. The plus icon (**New chat**) retains the existing note and starts a new note for the next conversation. Icon tooltips explain each action; the settings icon opens this plugin's settings.
+5. While an answer is streaming, the composer stays editable. Enter queues the next question (up to five) instead of discarding it; queued questions appear above the composer, can be removed individually and run automatically in order when the current answer finishes. Returning to the file of a queued question also starts it. Stop or request failure pauses the queue until Resume or another explicit submission. Queues are held in memory and cleared on unload; Feynman submissions remain locked during assessment.
+6. For editing, open a Markdown note, optionally select text, enter an instruction and choose the pencil icon (**Revise note**). Inspect the original/revised text before applying.
+7. Conversations automatically update a note in **AI Q&A**. The header's file icon (**View note**) opens it. The plus icon (**New chat**) retains the existing note and starts a new note for the next conversation. When **Append questions to the asked note** is on, each finished question is also appended to the asked Markdown note (screen questions to the note open when submitted or queued), with screenshots saved as attachments and embedded. Icon tooltips explain each action; the settings icon opens this plugin's settings.
 
 Settings provide **Check connection**, **Check File Q&A** and **Check Screen Q&A**. The file check sends synthetic text; the screen check sends a generated letter image and verifies that it was identified correctly. Checks can incur small provider charges and never capture the real screen.
 
@@ -115,9 +112,10 @@ Automatic appends skip identical summary text and retain new source links. For s
 
 Feynman completion records local **1, 3, 7 and 14 day** review plans, retaining up to 100 topics. Early practice does not advance the interval or count as delayed retention evidence. Plans send no background requests or system notifications. Select **Review plan** or **View knowledge review plan**, put the material aside and start a new round. Three application difficulty levels request direct use, transfer or counterexamples. A limited source-grounded numerical check can veto inconsistent independence conclusions for fully specified probability exercises; it is not a general mathematical verifier. Provider classification quality and lasting learning outcomes still require separate evaluation.
 
-Implementation evidence and remaining work are listed in the [Chinese progress report](docs/OPTIMIZATION_PROGRESS.zh-CN.md).
+See the [0.16.0 flow audit](docs/FLOW_AUDIT_0.16.0.zh-CN.md) and the earlier [Chinese progress report](docs/OPTIMIZATION_PROGRESS.zh-CN.md) for validation and remaining work.
 
 - New history is stored in plugin `data.json` via Obsidian `loadData`/`saveData`, alongside settings. Secret names are stored, not API secret values.
+- Appending to the asked note modifies that note with a question callout (optionally followed by the answer) and stores screenshot attachments using Obsidian's attachment settings. Appended question IDs are kept in plugin data so a retried answer never appends twice. Notes inside AI Q&A and knowledge folders are never modified, and non-Markdown targets are skipped.
 - Learning progress retains up to twenty recent sources, including topics, gaps, accepted answers and frozen file excerpts, but no images. Learning transcripts share the overall forty-conversation/eighty-message limits.
 - Saved conversation notes retain earlier turns beyond the in-memory eighty-message limit. Handwritten additions and edits to unchanged turns remain intact; a retry updates its original response. Streaming fragments are excluded, while stopped or failed responses are labeled incomplete. Note bindings persist after restart.
 - Existing `sessions.json` is read once when no migrated history exists. The original file is retained; newly saved history goes into `data.json`.

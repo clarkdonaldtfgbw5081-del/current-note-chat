@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.16.0
+
+- Bind screen questions to the note selected at submission/queueing, including cached retries. Follow source/queue renames and drop deleted or replaced targets. Pause pending questions after Stop or provider errors until explicit resume; preserve drafts and keep Feynman stage submissions locked while busy.
+- Validate screenshot attachment paths, use a real fallback attachment when configuration cannot be read, recheck write settings after asynchronous work, report failed source appends and retain the generated per-answer note link. Empty notes start with a question callout rather than an unterminated frontmatter delimiter.
+- Validate the complete transcript → source append → scoped knowledge archive flow and the new boundary cases with 136 automated tests, lint, production build and three-asset PDF installation checks.
+
+- Append finished questions to the asked-about Markdown note (on by default): file Q&A writes back to the file being asked, screen Q&A to the currently open Markdown note. Screenshot questions are saved as vault attachments using Obsidian's attachment settings and embedded before the question text. Notes inside the AI Q&A and knowledge folders are never modified, retried answers never append twice, and the conversation link is included when a transcript exists.
+- Add a separate toggle to record questions without the AI answer; the full answer still lives in the conversation note.
+- Queue follow-up questions while an answer is still streaming: the composer stays editable, pressing Enter queues up to five pending questions as visible tasks, and they run automatically in order when the conversation is idle again. Queued items can be removed, follow their own file when you switch notes, and are dropped if their source disappears. Screenshot context is captured when a queued question runs, not when it was typed.
+- Remove the unused legacy streaming wrapper from the plugin core.
+
 ## 0.15.0
 
 - Require a saved conversation before automatic classification. Persist bounded recovery tasks, classification plans and write journals; recover completed writes without duplicate appends, and pause uncertain paid requests until explicit retry.

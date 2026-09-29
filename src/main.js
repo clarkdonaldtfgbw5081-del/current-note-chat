@@ -9,6 +9,7 @@ const { TaskManager, throwIfAborted } = require('./tasks');
 const sessions = require('./sessions');
 const { loadLessons, serializeLessons, learningKey } = require('./feynman');
 const { ConversationNotes, noteSaveMode, formatNoteMessage } = require('./conversation-notes');
+const { SourceNotes, MAX_QA_APPENDS } = require('./source-notes');
 const { KnowledgeNotes } = require('./knowledge-notes');
 const { loadReviews } = require('./learning-review');
 const { FileTextCache } = require('./files');
@@ -55,6 +56,8 @@ const CurrentNoteChatPlugin = class extends Plugin {
     this.learningSessions = loadLessons(saved.learningSessions);
     this.learningReviews = loadReviews(saved.learningReviews);
     this.conversationNotes = new ConversationNotes(this, saved.conversationNotes);
+    this.sourceNotes = new SourceNotes(this);
+    this.appendedQa = new Set(Object.keys(saved.appendedQa && typeof saved.appendedQa === 'object' ? saved.appendedQa : {}).filter(id => typeof id === 'string' && id.length <= 128).slice(-MAX_QA_APPENDS));
     this.knowledgeNotes = new KnowledgeNotes(this, saved.knowledgeArchives, saved.knowledgeJobs, saved.classificationUsage);
     this.activeFile = null;
     this.lastMarkdownLeaf = null;
@@ -84,6 +87,7 @@ const CurrentNoteChatPlugin = class extends Plugin {
       menu.addItem((item) => item.setTitle(L("向 AI 提问此文件", "Ask AI about this file")).setIcon("message-circle").onClick(() => this.openChat(file)));
     }));
     this.registerEvent(this.app.vault.on("delete", (file) => {
+      this.widget.clearQueueFor(file.path);
       this.conversationNotes.deleteNote(file.path);
       this.knowledgeNotes.deleted(file.path);
       this.conversationNotes.forget(file.path); this.conversationNotes.forget(learningKey(file.path));
@@ -101,6 +105,7 @@ const CurrentNoteChatPlugin = class extends Plugin {
     }));
     this.registerEvent(this.app.vault.on("modify", file => this.fileCache.invalidate(file.path)));
     this.registerEvent(this.app.vault.on("rename", (file, oldPath) => {
+      this.widget.renameQueue(oldPath, file.path);
       this.conversationNotes.renameNote(oldPath, file.path);
       this.knowledgeNotes.rename(oldPath, file.path);
       for (const review of this.learningReviews.values()) if (review.source === oldPath || review.source.startsWith(oldPath + '/')) review.source = file.path + review.source.slice(oldPath.length);
@@ -141,12 +146,12 @@ const CurrentNoteChatPlugin = class extends Plugin {
     for (const thread of this.messagesByNote?.values() || []) for (const message of thread) if (message.streaming) {
       message.streaming = false; message.error = true; message.text = L('插件已停用，回答未完成。', 'Plugin unloaded before the answer completed.');
     }
-    if (this.settings && this.messagesByNote) void Promise.allSettled([this.conversationNotes?.chain, this.knowledgeNotes?.chain]).then(() => this.saveSettings()).catch(error => console.error('Screen & File Q&A: history save failed', error));
+    if (this.settings && this.messagesByNote) void Promise.allSettled([this.conversationNotes?.chain, this.sourceNotes?.chain, this.knowledgeNotes?.chain]).then(() => this.saveSettings()).catch(error => console.error('Screen & File Q&A: history save failed', error));
     this.app.workspace.detachLeavesOfType(VIEW_TYPE);
   }
   serializeSessions() { return sessions.serializeSessions(this.messagesByNote); }
   async saveSettings() {
-    const snapshot = { ...this.settings, schemaVersion: 4, sessionHistory: this.serializeSessions(), learningSessions: serializeLessons(this.learningSessions), learningReviews: [...loadReviews([...(this.learningReviews?.values() || [])]).values()], conversationNotes: this.conversationNotes?.serialize() || {}, knowledgeArchives: this.knowledgeNotes?.serialize() || {}, knowledgeJobs: this.knowledgeNotes?.serializeJobs() || [], classificationUsage: this.knowledgeNotes?.usage || { day: '', count: 0 } };
+    const snapshot = { ...this.settings, schemaVersion: 4, sessionHistory: this.serializeSessions(), learningSessions: serializeLessons(this.learningSessions), learningReviews: [...loadReviews([...(this.learningReviews?.values() || [])]).values()], conversationNotes: this.conversationNotes?.serialize() || {}, knowledgeArchives: this.knowledgeNotes?.serialize() || {}, knowledgeJobs: this.knowledgeNotes?.serializeJobs() || [], classificationUsage: this.knowledgeNotes?.usage || { day: '', count: 0 }, appendedQa: Object.fromEntries([...(this.appendedQa || [])].slice(-MAX_QA_APPENDS).map(id => [id, true])) };
     this._saveChain = this._saveChain.catch(() => {}).then(() => this.saveData(snapshot));
     return this._saveChain;
   }
@@ -171,6 +176,7 @@ const CurrentNoteChatPlugin = class extends Plugin {
     const key = this.widget?.getChatKey?.();
     if (key) this.conversationNotes?.forget(key);
     if (key) this.messagesByNote.delete(key);
+    this.widget?.clearQueueFor?.(key);
     if (this.widget?.learning.enabled && key) { this.learningSessions.delete(key); this.widget.snapshots.delete(key); }
     this.queueSaveSessions();
     this.widget?.refresh();
@@ -230,6 +236,7 @@ const CurrentNoteChatPlugin = class extends Plugin {
       await vault.create(path, frontmatter);
       if (meta.activity !== 'feynman' || meta.archiveReady) this.queueKnowledgeArchive(meta.archiveKey || meta.source || '__current_screen__', { id: meta.archiveMessageId || question, text: question }, { text: answer }, { ...meta, transcriptPath: path });
       new Notice(`${L("问答已保存为笔记", "Q&A saved as note")}: ${title}`);
+      return path;
     } catch (error) {
       new Notice(`${L("问答笔记保存失败", "Failed to save Q&A note")}: ${error?.message || String(error)}`);
     }
@@ -525,10 +532,6 @@ const CurrentNoteChatPlugin = class extends Plugin {
     if (config.backend === 'deepseek') body.thinking = { type: this.settings.deepseekThinking ? 'enabled' : 'disabled' };
     const delta = this.settings.streamingEnabled !== false && !editPrompt ? onDelta : null;
     return this.runTask(inner => requestChat({ config, body, onDelta: delta, signal: inner, request: options => apiRequest(options, inner) }), signal);
-  }
-  async askApiStream(url, headers, body, onDelta, signal) {
-    const { streamChat } = require('./stream');
-    return streamChat(url, headers, body, onDelta, signal);
   }
   async askCodex(notePath, noteText, history, question, screenshot, editPrompt, onDelta, signal) {
     const settings = { ...this.settings };

@@ -55,7 +55,7 @@ class FeynmanLearning {
     this.detailEl.setText(state ? [frozen, state.source?.partial ? L('片段未涵盖全文。', 'Excerpts do not cover the full file.') : '', state.gaps.length ? `${L('待补强', 'Work on')}: ${state.gaps.join('；')}` : '', state.phase === 'complete' ? L('建议明天不看资料复习。', 'Review tomorrow without the source.') : state.challenge].filter(Boolean).join('\n') : L('输入要学的知识点名称，例如“贝叶斯定理”。接下来需要你解释、作答并再次讲清楚。', 'Enter a concept, such as “Bayes’ theorem”. You will explain it, solve a problem and teach it back.'));
     widget.inputEl.placeholder = !state ? L('输入一个知识点名称（最多 300 字符）…', 'Enter one concept (up to 300 characters)…') : state.phase === 'complete' ? L('点击“开始复习”或“新知识点”。', 'Use Start review or New topic.') : L('用自己的话解释，或回答上面的题目…', 'Explain in your own words, or answer the question above…');
     widget.inputEl.setAttribute?.('aria-label', !state ? L('知识点名称', 'Concept name') : L('我的解释或应用题答案', 'My explanation or application answer'));
-    widget.inputEl.disabled = widget.inputEl.disabled || state?.phase === 'complete';
+    widget.inputEl.disabled = widget.inputEl.disabled || widget.busy || state?.phase === 'complete';
     widget.sendButton.disabled = widget.sendButton.disabled || (!widget.busy && state?.phase === 'complete');
     buttonContent(widget.sendButton, widget.busy ? L('停止', 'Stop') : !state ? L('开始学习', 'Start learning') : L('提交解释', 'Submit answer'), widget.busy ? 'square' : 'arrow-up');
     buttonContent(widget.clearButton, L('新知识点', 'New topic'), 'plus', true);

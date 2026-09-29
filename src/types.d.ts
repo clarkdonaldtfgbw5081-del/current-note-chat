@@ -20,6 +20,8 @@ export interface PluginSettings {
   saveQA: boolean;
   noteSaveMode: 'conversation' | 'answer' | 'off';
   qaFolder: string;
+  qaAppendSource: boolean;
+  qaAppendAnswer: boolean;
   autoClassify: boolean;
   knowledgeFolder: string;
   classificationModel: string;

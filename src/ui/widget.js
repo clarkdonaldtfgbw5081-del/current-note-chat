@@ -1,6 +1,6 @@
 const { Component, MarkdownRenderer, Notice, setIcon } = require('obsidian');
 const { L, interfaceLanguage } = require('../i18n');
-const { SCREEN_CHAT_KEY, MAX_QUESTION_CHARS } = require('../constants');
+const { SCREEN_CHAT_KEY, MAX_QUESTION_CHARS, MAX_QUEUE } = require('../constants');
 const { normalizeMathDelimiters } = require('../prompts');
 const { selectRelevantContext } = require('../retrieval');
 const { newMessage, touchSession } = require('../sessions');
@@ -15,6 +15,8 @@ class CurrentNoteChatWidget {
   constructor(plugin) {
     this.plugin = plugin;
     this.busy = false;
+    this.queue = [];
+    this.queuePaused = false;
     this.snapshots = new Map();
     this.streamingElements = new Map();
     this.learning = new FeynmanLearning(this);
@@ -69,6 +71,7 @@ class CurrentNoteChatWidget {
     iconButton(this.archiveRow, L('归档任务与用量', 'Archive tasks and usage'), 'list-checks').addEventListener('click', () => { const { ArchiveTasksModal } = require('./archive-tasks'); new ArchiveTasksModal(this.plugin).open(); });
     this.messagesEl = root.createDiv({ cls: 'current-note-chat__messages', attr: { 'aria-live': 'polite', 'aria-label': L('对话记录', 'Conversation') } });
     const composer = root.createDiv({ cls: 'current-note-chat__composer' });
+    this.queueEl = composer.createDiv({ cls: 'current-note-chat__queue', attr: { role: 'list', 'aria-live': 'polite', 'aria-label': L('待执行的问题', 'Queued questions') } });
     this.inputEl = composer.createEl('textarea', { cls: 'current-note-chat__input', attr: { 'aria-label': L('问题或笔记修改要求', 'Question or note revision instruction') } });
     this.inputEl.addEventListener('keydown', event => {
       if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); void this.sendQuestion(); }
@@ -84,9 +87,10 @@ class CurrentNoteChatWidget {
     this.sendButton.addEventListener('click', () => this.busy ? this.cancel() : void this.sendQuestion());
     this.refresh();
   }
-  cancel() { this.requestController?.abort(abortError(L('已停止请求。', 'Request stopped.'))); }
+  cancel() { this.queuePaused = true; this.requestController?.abort(abortError(L('已停止请求。', 'Request stopped.'))); }
   unmount() {
     this.unmounted = true; this.cancel();
+    this.queue = [];
     clearTimeout(this._streamRenderTimer); this._streamRenderTimer = null;
     clearTimeout(this._snapshotExpiryTimer); this._snapshotExpiryTimer = null;
     this.renderComponent?.unload(); this.renderComponent = null;
@@ -109,9 +113,9 @@ class CurrentNoteChatWidget {
     this.noteEl.setText(screen ? L('截取当前显示器，画面可能包含其他应用窗口。', 'Captures the current display, including other app windows.') : file ? `${L('当前文件', 'Current file')}: ${file.path}` : L('请打开支持的文件。', 'Open a supported file.'));
     if (this.learning.enabled && this.learning.state()?.source?.mode === 'screen') this.noteEl.setText(L('学习资料：本轮固定截图，后续作答会复用这张图。', 'Learning source: the frozen screenshot is reused for this round.'));
     this.noteEl.setAttribute('title', this.noteEl.textContent || this.noteEl.text || '');
-    this.inputEl.placeholder = screen ? L('询问屏幕内容，或输入笔记修改要求…', 'Ask about the screen, or request a note revision…') : L('询问文件内容，或输入笔记修改要求…', 'Ask about the file, or request a note revision…');
+    this.inputEl.placeholder = this.busy ? L('回答进行中：输入下一个问题，回车排队执行…', 'Answer in progress: type the next question and press Enter to queue it…') : screen ? L('询问屏幕内容，或输入笔记修改要求…', 'Ask about the screen, or request a note revision…') : L('询问文件内容，或输入笔记修改要求…', 'Ask about the file, or request a note revision…');
     this.inputEl.setAttribute('aria-label', L('问题或笔记修改要求', 'Question or note revision instruction'));
-    this.inputEl.disabled = (!screen && !file) || this.busy;
+    this.inputEl.disabled = !screen && !file;
     this.sendButton.disabled = !this.busy && !screen && !file;
     buttonContent(this.sendButton, this.busy ? L('停止', 'Stop') : L('发送', 'Send'), this.busy ? 'square' : 'arrow-up');
     this.clearButton.disabled = !this.getChatKey() || this.busy; this.exportButton.disabled = this.busy;
@@ -124,6 +128,54 @@ class CurrentNoteChatWidget {
     this.refreshArchive();
     this.learning.refresh();
     this.renderMessages();
+    this.renderQueue();
+    if (!this.busy && !this.queuePaused && this.queue.length) setTimeout(() => this.drainQueue(), 0);
+  }
+  validKey(key) { return key === SCREEN_CHAT_KEY || Boolean(this.plugin.app.vault.getAbstractFileByPath(key)); }
+  clearQueueFor(key) {
+    const before = this.queue.length;
+    this.queue = this.queue.filter(item => item.key !== key && !item.key.startsWith(key + '/'));
+    if (this.queue.length !== before) this.renderQueue();
+  }
+  renameQueue(oldPath, newPath) {
+    for (const item of this.queue) if (item.key === oldPath || item.key.startsWith(oldPath + '/')) item.key = newPath + item.key.slice(oldPath.length);
+    this.renderQueue();
+  }
+  renderQueue() {
+    if (this.unmounted || !this.queueEl) return;
+    this.queueEl.empty();
+    this.queueEl.toggleClass('is-empty', !this.queue.length);
+    if (this.queuePaused && this.queue.length) {
+      const resume = this.queueEl.createEl('button', { text: L('继续执行待提问问题', 'Resume queued questions') });
+      resume.disabled = this.busy || this.learning.enabled;
+      resume.addEventListener('click', () => { this.queuePaused = false; this.drainQueue(); });
+    }
+    const current = this.getChatKey();
+    for (const item of this.queue) {
+      const row = this.queueEl.createDiv({ cls: 'current-note-chat__queue-item' });
+      row.setAttribute('role', 'listitem');
+      const icon = row.createSpan({ cls: 'current-note-chat__queue-icon', attr: { 'aria-hidden': 'true' } });
+      setIcon(icon, 'clock');
+      const source = item.key === current ? '' : `${item.key === SCREEN_CHAT_KEY ? L('屏幕', 'Screen') : item.key.split('/').at(-1)} · `;
+      row.createSpan({ cls: 'current-note-chat__queue-text', text: `⏳ ${source}${item.text.split('\n')[0]}`.slice(0, 120), attr: { title: item.text } });
+      const remove = iconButton(row, L('移除待执行问题', 'Remove queued question'), 'x');
+      remove.addClass('current-note-chat__queue-remove');
+      remove.addEventListener('click', () => {
+        const at = this.queue.indexOf(item);
+        if (at >= 0) this.queue.splice(at, 1);
+        this.renderQueue();
+      });
+    }
+  }
+  drainQueue() {
+    if (this.unmounted || this.busy || this.learning.enabled || this.queuePaused) return;
+    this.queue = this.queue.filter(item => this.validKey(item.key) && (!item.sourceFile || this.plugin.app.vault.getAbstractFileByPath(item.key) === item.sourceFile));
+    const key = this.getChatKey();
+    const index = key ? this.queue.findIndex(item => item.key === key) : -1;
+    if (index < 0) { this.renderQueue(); return; }
+    const [item] = this.queue.splice(index, 1);
+    this.renderQueue();
+    void this.sendQuestion(null, item.text, item.sourceTarget);
   }
   refreshArchive() {
     if (this.unmounted) return;
@@ -211,36 +263,53 @@ class CurrentNoteChatWidget {
     this._snapshotExpiryTimer = setTimeout(() => this.pruneSnapshots(), delay);
     this._snapshotExpiryTimer?.unref?.();
   }
-  async sendQuestion(retryId) {
+  async sendQuestion(retryId, presetText, presetTarget) {
     if (this.learning.enabled) return this.learning.send(retryId);
-    if (this.busy || this.unmounted) return;
+    if (this.unmounted) return;
+    if (this.busy) {
+      if (retryId || presetText) return;
+      const key = this.getChatKey();
+      if (!key) { new Notice(L('请先打开支持的文件。', 'Open a supported file first.')); return; }
+      const text = this.inputEl.value.trim();
+      if (!text) return;
+      if (text.length > MAX_QUESTION_CHARS) { new Notice(L('问题不能超过 8000 字符。', 'Keep the question within 8000 characters.')); return; }
+      if (this.queue.length >= MAX_QUEUE) { new Notice(L('待执行问题最多 5 条，请等当前回答完成。', 'At most 5 queued questions; wait for the current answer.')); return; }
+      this.queue.push({ key, text, ...(key === SCREEN_CHAT_KEY ? { sourceTarget: this.plugin.activeFile || null } : { sourceFile: this.plugin.app.vault.getAbstractFileByPath(key) }) });
+      this.inputEl.value = '';
+      this.renderQueue();
+      return;
+    }
     const key = this.getChatKey();
     if (!key) { new Notice(L('请先打开支持的文件。', 'Open a supported file first.')); return; }
     const thread = this.plugin.messagesByNote.get(key) || [];
     const userIndex = retryId ? thread.findIndex(item => item.id === retryId && item.role === 'user') : -1;
     if (retryId && userIndex < 0) return;
-    const question = retryId ? thread[userIndex].text : this.inputEl.value.trim();
+    const question = retryId ? thread[userIndex].text : (presetText ?? this.inputEl.value.trim());
     if (!question) return;
     if (question.length > MAX_QUESTION_CHARS) { new Notice(L('问题不能超过 8000 字符。', 'Keep the question within 8000 characters.')); return; }
     const mode = key === SCREEN_CHAT_KEY ? 'screen' : 'file';
     const file = mode === 'file' ? this.plugin.app.vault.getAbstractFileByPath(key) : null;
+    const sourceTarget = mode === 'file' ? file : presetTarget !== undefined ? presetTarget : this.plugin.activeFile;
     const history = thread.slice(0, retryId ? userIndex : thread.length).filter(item => !item.error && !item.streaming).slice(-6).map(({ role, text }) => ({ role, text }));
     const user = retryId ? thread[userIndex] : newMessage('user', question);
-    if (!retryId) { thread.push(user); this.inputEl.value = ''; }
+    if (!retryId) { thread.push(user); if (!presetText) this.inputEl.value = ''; }
     const reply = newMessage('assistant', '', { streaming: true, replyTo: user.id });
     const oldError = retryId ? thread.findIndex(item => item.error && item.replyTo === user.id) : -1;
     if (oldError >= 0) thread.splice(oldError, 1, reply); else thread.push(reply);
     touchSession(this.plugin.messagesByNote, key, thread);
+    this.queuePaused = false;
     this.busy = true; this.requestController = new AbortController(); this.refresh();
     let meta = { mode, source: mode === 'file' ? key : undefined, model: this.plugin.currentModel() };
+    let snapshot = null;
+    let answerNotePath = null;
     try {
       await this.plugin.saveConversation?.(key, thread, meta);
-      let snapshot = retryId ? this.snapshots.get(user.id) : null;
+      snapshot = retryId ? this.snapshots.get(user.id) : null;
       snapshot = snapshot && Date.now() - snapshot.at < 10 * 60 * 1000 ? snapshot.snapshot : null;
       const signal = this.requestController.signal;
       if (!snapshot) {
         if (retryId) new Notice(L('原始上下文已不可用，将读取当前文件或重新截图。', 'Original context is unavailable; reading the current file or capturing a new screenshot.'));
-        snapshot = { mode, source: mode === 'file' ? key : undefined, question, history };
+        snapshot = { mode, source: mode === 'file' ? key : undefined, question, history, sourceTarget };
         if (mode === 'screen') {
           this.rootEl.addClass('is-capturing');
           try {
@@ -267,17 +336,23 @@ class CurrentNoteChatWidget {
       throwIfAborted(signal); if (this.unmounted) return;
       reply.streaming = false;
       reply.text = snapshot.partial ? `${answer}\n\n${L('（本次基于相关片段回答，未涵盖全文。）', '(Answered from selected excerpts, not the complete file.)')}` : answer;
-      if (noteSaveMode(this.plugin.settings) === 'answer') await this.plugin.saveQAToNote(question, reply.text, { ...meta, archiveKey: key, archiveMessageId: user.id });
+      if (noteSaveMode(this.plugin.settings) === 'answer') answerNotePath = await this.plugin.saveQAToNote(question, reply.text, { ...meta, archiveKey: mode === 'file' ? file?.path || key : key, archiveMessageId: user.id });
     } catch (error) {
+      this.queuePaused = true;
       if (!this.unmounted) { reply.streaming = false; reply.error = true; reply.text = `${L('无法回答', 'Could not answer')}: ${error.message || error}`; }
     } finally {
       clearTimeout(this._streamRenderTimer); this._streamRenderTimer = null;
       const savedKey = mode === 'file' ? file?.path || key : key;
-      const transcriptPath = !this.unmounted && this.plugin.messagesByNote.get(savedKey) === thread ? await this.plugin.saveConversation?.(savedKey, thread, { ...meta, source: mode === 'file' ? savedKey : undefined }) : null;
-      if (transcriptPath && !this.unmounted && this.plugin.messagesByNote.get(savedKey) === thread && noteSaveMode(this.plugin.settings) === 'conversation' && !reply.error && !reply.streaming) void this.plugin.queueKnowledgeArchive?.(savedKey, user, reply, { ...meta, transcriptPath, source: mode === 'file' ? savedKey : undefined });
-      else if (!transcriptPath && !this.unmounted && noteSaveMode(this.plugin.settings) === 'conversation' && !reply.error && !reply.streaming) this.plugin.knowledgeNotes?.deferTranscript(savedKey, user, reply, { ...meta, source: mode === 'file' ? savedKey : undefined });
+      const ownsThread = !this.unmounted && this.plugin.messagesByNote.get(savedKey) === thread;
+      const transcriptPath = ownsThread ? await this.plugin.saveConversation?.(savedKey, thread, { ...meta, source: mode === 'file' ? savedKey : undefined }) || answerNotePath : null;
+      if (transcriptPath && ownsThread && noteSaveMode(this.plugin.settings) === 'conversation' && !reply.error && !reply.streaming) void this.plugin.queueKnowledgeArchive?.(savedKey, user, reply, { ...meta, transcriptPath, source: mode === 'file' ? savedKey : undefined });
+      else if (!transcriptPath && ownsThread && noteSaveMode(this.plugin.settings) === 'conversation' && !reply.error && !reply.streaming) this.plugin.knowledgeNotes?.deferTranscript(savedKey, user, reply, { ...meta, source: mode === 'file' ? savedKey : undefined });
+      if (ownsThread && !reply.error && !reply.streaming && this.plugin.settings.qaAppendSource && this.plugin.sourceNotes) {
+        const target = snapshot?.sourceTarget !== undefined ? snapshot.sourceTarget : sourceTarget;
+        if (target?.extension?.toLowerCase() === 'md') void this.plugin.sourceNotes.append(target.path, { id: user.id, question, answer: reply.text, screenshot: snapshot?.screenshot || null, transcriptPath: transcriptPath || null, mode });
+      }
       this.busy = false; this.requestController = null;
-      if (!this.unmounted) { this.plugin.queueSaveSessions(); this.refresh(); }
+      if (!this.unmounted) { this.plugin.queueSaveSessions(); this.refresh(); this.drainQueue(); }
     }
   }
   async editNote() {
