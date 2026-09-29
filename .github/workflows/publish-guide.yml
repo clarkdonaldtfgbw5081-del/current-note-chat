@@ -1,0 +1,47 @@
+name: Publish illustrated release guide
+on:
+  push:
+    branches: [main]
+    paths:
+      - README.md
+      - README.zh-CN.md
+      - docs/SCREENSHOTS.md
+      - docs/SCREENSHOTS.zh-CN.md
+      - docs/QUICKSTART.md
+      - docs/QUICKSTART.zh-CN.md
+      - docs/RELEASE_GUIDE.md
+      - .github/workflows/publish-guide.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: publish-first-release-guide
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add illustrated guide without replacing other release text
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            if (JSON.parse(fs.readFileSync('manifest.json', 'utf8')).version !== '1.0.0') { core.notice('This guide describes the first release.'); return; }
+            const { data: release } = await github.rest.repos.getReleaseByTag({ ...context.repo, tag: '1.0.0' });
+            if (release.draft || release.prerelease) throw new Error('Expected the existing public first release.');
+            for (const name of ['main.js', 'manifest.json', 'styles.css']) {
+              if (!release.assets.some(asset => asset.name === name && asset.size > 0)) throw new Error(`Missing installation asset: ${name}`);
+            }
+            const start = '<!-- illustrated-guide:start -->';
+            const end = '<!-- illustrated-guide:end -->';
+            const guide = fs.readFileSync('docs/RELEASE_GUIDE.md', 'utf8').replaceAll('__REPOSITORY__', `${context.repo.owner}/${context.repo.repo}`).replaceAll('__COMMIT__', context.sha);
+            const section = `${start}\n${guide.trim()}\n${end}`;
+            const body = release.body || '';
+            const a = body.indexOf(start), b = body.indexOf(end);
+            if ((a < 0) !== (b < 0) || (a >= 0 && b < a) || body.indexOf(start, a + 1) >= 0 || body.indexOf(end, b + 1) >= 0) throw new Error('Ambiguous guide markers; preserving the release body.');
+            const updated = a < 0 ? `${body.trimEnd()}\n\n${section}\n` : body.slice(0, a) + section + body.slice(b + end.length);
+            if (updated !== body) await github.rest.repos.updateRelease({ ...context.repo, release_id: release.id, body: updated });
+            await core.summary.addHeading('Illustrated guide published').addLink('First-release page', release.html_url).addRaw('\nSix illustrated features and links to the step-by-step guide. Existing release text and assets retained.').write();

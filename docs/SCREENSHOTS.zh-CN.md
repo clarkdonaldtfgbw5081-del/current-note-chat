@@ -1,37 +1,67 @@
-# 1.0.0 首发功能示意
+# 1.0.0：八张图理解完整学习流程
 
-这些图片取自首发宣传片，使用虚构内容与重新绘制的功能示意，非原生 Obsidian 实机截图。
+[中文上手指南](QUICKSTART.zh-CN.md) · [项目首页](../README.zh-CN.md)
 
-## 学习链 / Learning flow
+画面取自首发宣传片，使用虚构的概率学习例子和重新绘制的功能示意，不是原生 Obsidian 实机截图。说明对应首发实现；真实界面配色、尺寸与排版随 Obsidian 主题变化。点击图片可放大。
 
-![学习链 / Learning flow](images/first-release-01-intro.png)
+## 1. 提问、留下记录、检验理解
 
-## 问答与自动保存 / Q&A and saving
+先读这条学习链：问题变成对话记录与主题笔记，随后通过解释、应用和复习检查理解。插件免费开源，AI 服务独立配置，可能收费。
 
-![问答与自动保存 / Q&A and saving](images/first-release-02-qa.png)
+![提问、留下记录、检验理解](images/first-release-01-intro.png)
 
-## 连续问题 / Queued questions
+## 2. 对文件或屏幕提问
 
-![连续问题 / Queued questions](images/first-release-03-queue.png)
+打开资料、选择来源、输入一个具体问题。屏幕问答默认先预览再发送；同一对话会自动更新同一篇笔记。
 
-## 原笔记与附件 / Source notes and attachments
+![对文件或屏幕提问](images/first-release-02-qa.png)
 
-![原笔记与附件 / Source notes and attachments](images/first-release-04-source.png)
+试着问：“用一个生活例子解释独立性，再与互斥比较。”想看结果时，点击顶部“查看笔记”。
 
-## 主题归档 / Topic archiving
+## 3. 回答时继续追问
 
-![主题归档 / Topic archiving](images/first-release-05-knowledge.png)
+输入框保持可编辑，按 Enter 排队，最多五条。停止或服务商出错后，待执行问题暂停，主动继续才发送。
 
-## 费曼学习 / Feynman practice
+![回答时继续追问](images/first-release-03-queue.png)
 
-![费曼学习 / Feynman practice](images/first-release-06-feynman.png)
+图中队列展示两条已排队的问题。不同文件的问题跟随各自来源，切回该文件后执行；排队的屏幕问题在执行时截图。队列仅保存在内存中。
 
-## 间隔复习 / Reviews
+## 4. 问题与回答回到原笔记
 
-![间隔复习 / Reviews](images/first-release-07-reviews.png)
+将问题、可选回答和完整对话链接追加到被提问的 Markdown 笔记，截图保存为 PNG 附件。原笔记写回与对话保存可以分别设置。
 
-## 安装入口 / Installation
+![问题与回答回到原笔记](images/first-release-04-source.png)
 
-![安装入口 / Installation](images/first-release-08-outro.png)
+观察问题卡片里的附件，以及下方的 AI 解答和完整对话链接。只想记录问题时，关闭“写入提问时包含 AI 回答”；不想写回原文时，关闭“将提问写入被提问的笔记”。
+
+## 5. 按主题归入知识库
+
+AI 只在指定知识目录内寻找主题笔记，保留手写内容和来源链接；低置信度结果进入待整理。分类可能增加 AI 用量。
+
+![按主题归入知识库](images/first-release-05-knowledge.png)
+
+主题笔记保留核心结论和来源，完整过程留在对话笔记。知识目录可修改；分类专用模型、每日请求上限及归档任务入口位于插件设置。
+
+## 6. 用费曼学习检查理解
+
+用自己的话解释，完成应用题，再讲给初学者。反馈指出薄弱点，小提示不算阶段通过；AI 评估需要核对。
+
+![用费曼学习检查理解](images/first-release-06-feynman.png)
+
+此帧展示应用阶段。解释和应用通过后才进入下一阶段；小提示或错误答案不算通过。难度可选择基础应用、迁移推理、反例与边界。
+
+## 7. 到期再练，留下学习记录
+
+完成学习后安排本地 1、3、7、14 天复习，主动选择知识点开始练习；计划不会到期就自动请求 AI。
+
+![到期再练，留下学习记录](images/first-release-07-reviews.png)
+
+观察本地复习日期序列。提前练习不推进到期复习次数；可关闭“记录间隔复习计划”。主动练习时使用配置的 AI 服务。
+
+## 8. 安装与版本
+
+社区插件名称是 Screen and File QA，首发版本为 1.0.0，需要桌面 Obsidian 1.13.0+。从 Release 获取 plugin ZIP 或三个安装文件；source ZIP 用于开发。
+
+![安装与版本](images/first-release-08-outro.png)
 
 [GitHub 1.0.0 Release](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/1.0.0)

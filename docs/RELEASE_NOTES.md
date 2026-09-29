@@ -9,6 +9,8 @@ Turn questions into readable notes and structured learning practice in desktop O
 - **Feynman learning:** explain in your own words, solve an application and teach it back. Record feedback and local 1/3/7/14-day reviews.
 - **Reviewed revisions and settings:** preview Markdown edits, preserve intervening changes, and configure saving, source writes, classification and providers independently.
 
+[中文图文上手指南](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/blob/main/docs/QUICKSTART.zh-CN.md) · [English quick start](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/blob/main/docs/QUICKSTART.md)
+
 ## 安装与视频
 
 需要桌面 Obsidian 1.13.0+。社区插件发布名称为 **Screen and File QA**。手动安装时复制 `main.js`、`manifest.json`、`styles.css`；plugin ZIP 是安装包，source ZIP 是源码。

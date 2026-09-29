@@ -10,9 +10,49 @@ The plugin is free and open source. AI providers may require their own account, 
 
 *1080p · Chinese captions · no audio. Illustrated workflow with simulated content, not native Obsidian recordings. Covers queued questions, source-note appends, screenshot attachments, topic archiving, Feynman learning and reviews.*
 
-![Knowledge note with source links](docs/images/first-release-05-knowledge.png)
+## Illustrated walkthrough
 
-*First-release feature illustration with simulated content, not a native Obsidian screenshot. The actual panel follows your theme and supports Chinese/English controls. [See eight illustrated workflow frames](docs/SCREENSHOTS.md).*
+[Step-by-step quick start](docs/QUICKSTART.md) · [Eight feature illustrations](docs/SCREENSHOTS.md) · [中文图文指南](docs/QUICKSTART.zh-CN.md)
+
+*These are 1.0.0 feature illustrations with simulated content, not native Obsidian screenshots. The actual panel follows your theme. Click an image to view it at full size.*
+
+### 1. Ask about a file or screen
+
+Open your material, choose a source and ask a concrete question. Screen captures are previewed before sending by default; each conversation updates one note.
+
+![Ask about a file or screen](docs/images/first-release-02-qa.png)
+
+### 2. Keep asking while an answer streams
+
+Type another question and press Enter to queue it, up to five pending items. Stop or provider errors pause remaining sends until explicit resume.
+
+![Keep asking while an answer streams](docs/images/first-release-03-queue.png)
+
+### 3. Keep questions beside the original note
+
+Append questions, optional answers and transcript links to the asked Markdown note. Screenshots become vault PNG attachments. Source writes and conversation saving have independent settings.
+
+![Keep questions beside the original note](docs/images/first-release-04-source.png)
+
+### 4. Organize answers by topic
+
+Find topics only within the configured knowledge directory, preserve handwritten content and provenance, and put uncertain matches in Inbox. Classification may add AI usage.
+
+![Organize answers by topic](docs/images/first-release-05-knowledge.png)
+
+### 5. Check understanding with Feynman practice
+
+Explain in your own words, solve an application and teach it back. Feedback identifies gaps; hints do not pass stages. Check the AI assessment.
+
+![Check understanding with Feynman practice](docs/images/first-release-06-feynman.png)
+
+### 6. Review later and retain learning feedback
+
+After learning, track local 1/3/7/14-day reviews and choose a topic to practise. The plan never automatically requests AI when due.
+
+![Review later and retain learning feedback](docs/images/first-release-07-reviews.png)
+
+[See note destinations, settings and the complete learning flow →](docs/QUICKSTART.md)
 
 **Privacy:** Screen Q&A captures the selected display, including other application windows. A preview is shown before sending by default. The question, recent conversation and screenshot or selected file excerpts are sent to your configured provider. API keys use Obsidian SecretStorage. Chat histories and exported notes are local vault data that may be copied by vault sync. See [SECURITY.md](SECURITY.md) for storage, cancellation and Codex details.
 
