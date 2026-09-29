@@ -10,6 +10,7 @@ The directory reports errors, warnings, recommendations and passes separately. I
 | Shell execution / child processes | The Codex backend starts the configured CLI and stops its process tree on cancellation. Arguments are passed as an array; shell mode is not enabled. Prompts use stdin. AI answers are not executed as shell commands. |
 | Clipboard access | The Copy answer button writes the selected answer. The plugin's own code does not read the clipboard. |
 | Dynamic code execution | PDF.js includes Function constructors for probes, compatibility fallbacks and optional compilation. The parser uses `isEvalSupported: false`, disabling PDF-generated function compilation. Constructors remain in the dependency and can still be detected; AI answers are not evaluated as code. |
+| Vault enumeration | Automatic classification currently obtains Markdown paths with `vault.getMarkdownFiles()` and filters them locally to the configured knowledge folder. Only candidate names and paths inside that folder are sent for routing; existing candidate contents are not read or sent. Traversing only the configured folder is a proposed improvement. |
 
 These capabilities are disclosed rather than hidden from the scanner. Removing the Codex modules or the PDF dependency would remove existing features.
 
@@ -25,4 +26,8 @@ Obsidian downloads only those three installation assets. Plugin/source ZIPs, lic
 
 ## Current review
 
-The 0.13.2 entry was published on 2026-09-28 and was still being reviewed when these notices were inspected. After publishing 0.13.3, use **Check for new releases** in the entry manager and inspect the new review. Treat any reported error as work to resolve before claiming marketplace installation is available.
+Verified on 2026-09-29: the public [plugin page](https://community.obsidian.md/plugins/current-note-chat) shows version **0.14.0** and offers **Add to Obsidian**. The entry manager shows the automated review for release commit `2259d16` as **Completed**. The public scorecard reports **Excellent** health and **Satisfactory** review.
+
+The review reports verified artifact attestations, no vulnerable dependencies and a reproduced build matching the release `main.js` byte for byte. Capability notices described above remain, including the vault-enumeration recommendation introduced by automatic classification. It also recommends removing unsupported extra release files, which Obsidian does not download. Completed means the checks finished, not that every category is a pass.
+
+These results describe 0.14.0 at the date checked. Future releases need their own review. Illustrated workflows are available in the [screenshot guide](SCREENSHOTS.md); pending product improvements are listed in the [Chinese roadmap](OPTIMIZATION_ROADMAP.zh-CN.md).

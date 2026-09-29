@@ -6,9 +6,9 @@ An Obsidian desktop plugin for asking AI about your screen or the current file, 
 
 The plugin is free and open source. AI providers may require their own account, API key or subscription and charge for requests. Supported remote services are OpenAI, DeepSeek, the service used by your signed-in Codex CLI and any compatible endpoint you configure. The plugin has no analytics or advertising.
 
-![Interface preview with synthetic content](docs/images/panel-preview.png)
+![Q&A and automatic knowledge archiving](docs/images/guide-qa-0.14.0.jpg)
 
-*Design preview using synthetic content. The panel follows your Obsidian theme; controls support Chinese and English.*
+*Browser walkthrough using the 0.14.0 UI code and synthetic content. The actual panel follows your Obsidian theme; controls support Chinese and English. [See the three illustrated workflows](docs/SCREENSHOTS.md).*
 
 **Privacy:** Screen Q&A captures the selected display, including other application windows. A preview is shown before sending by default. The question, recent conversation and screenshot or selected file excerpts are sent to your configured provider. API keys use Obsidian SecretStorage. Chat histories and exported notes are local vault data that may be copied by vault sync. See [SECURITY.md](SECURITY.md) for storage, cancellation and Codex details.
 
@@ -32,6 +32,8 @@ Community review may flag filesystem access and child processes used by the opti
 
 Requires Obsidian **1.13.0 or newer** on desktop. Mobile is not supported.
 
+Open **Settings → Community plugins → Browse**, search for **Screen and File QA**, install it and enable it. Alternatively, select **Add to Obsidian** on the [official plugin page](https://community.obsidian.md/plugins/current-note-chat). On September 29, 2026, the public listing showed **0.14.0**, and the automated review for that release was **Completed**.
+
 For manual installation, extract the **plugin ZIP** from a release into your vault's configuration directory under `plugins/current-note-chat/`. The default configuration directory is `.obsidian`; it can be customized.
 
 Alternatively, copy these three release assets into that directory:
@@ -43,8 +45,6 @@ styles.css
 ```
 
 Enable **Screen and File QA** in Settings → Community plugins; search for `Screen and File QA` to find it among installed plugins. The controls follow the Obsidian interface language. The PDF worker and complete bundled license notices are embedded in `main.js`; no separate worker or `node_modules` is needed. The source ZIP is for development, not installation.
-
-A GitHub release does not imply that the plugin is already listed in the official community directory.
 
 ## Configure a provider
 
@@ -91,7 +91,7 @@ Choose a vault folder in **Conversation notes folder**, defaulting to **AI Q&A**
 
 **AI classification and archiving** is enabled by default when automatic note saving is enabled. After a complete Q&A answer is saved, a background request to the configured provider summarizes it and chooses a knowledge note. Feynman rounds archive their report only after completion; hints and unfinished assessments remain in the conversation.
 
-The default knowledge folder is **AI Knowledge** (**AI 知识库** in a Chinese interface). Classification considers only Markdown titles and paths within this folder and its subfolders, excluding the current source, transcript and Inbox. It sends no existing note contents. A clearly matching concept receives an appended section; otherwise the plugin creates a topic note inside one to three category folders. Handwritten content stays intact and archived sections link to their full conversation and source when available.
+The default knowledge folder is **AI Knowledge** (**AI 知识库** in a Chinese interface). Classification considers only Markdown titles and paths within this folder and its subfolders, excluding the current source, transcript and Inbox. It sends no existing candidate note contents. This version enumerates Markdown paths locally before filtering the knowledge folder; paths outside that folder are excluded from the classification request. A clearly matching concept receives an appended section; otherwise the plugin creates a topic note inside one to three category folders. Handwritten content stays intact and archived sections link to their full conversation and source when available.
 
 For example, a probability answer may go to AI Knowledge/Mathematics/Probability/Independence.md. This is an illustration: category names and classification depend on the model. Classification is a suggestion, not a verified fact. Low-confidence results go to **Inbox**. If classification fails or returns an unsafe destination, Inbox retains the original answer for review. Stopped and failed Q&A answers are not classified.
 
