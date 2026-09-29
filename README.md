@@ -6,13 +6,13 @@ An Obsidian desktop plugin for asking AI about your screen or the current file, 
 
 The plugin is free and open source. AI providers may require their own account, API key or subscription and charge for requests. Supported remote services are OpenAI, DeepSeek, the service used by your signed-in Codex CLI and any compatible endpoint you configure. The plugin has no analytics or advertising.
 
-[Watch the 0.16.0 video (45 seconds)](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/download/0.16.0/Screen-and-File-QA-0.16.0-45s.mp4) · [Storyboard and editable source](docs/media/promo-0.16.0/README.zh-CN.md)
+[Watch the 1.0.0 video (45 seconds)](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/download/1.0.0/Screen-and-File-QA-1.0.0-45s.mp4) · [Storyboard and editable source](docs/media/promo-1.0.0/README.zh-CN.md)
 
 *1080p · Chinese captions · no audio. Illustrated workflow with simulated content, not native Obsidian recordings. Covers queued questions, source-note appends, screenshot attachments, topic archiving, Feynman learning and reviews.*
 
-![Knowledge note with source links](docs/images/guide-knowledge-0.15.0.jpg)
+![Knowledge note with source links](docs/images/first-release-05-knowledge.png)
 
-*Browser walkthrough using the 0.15.0 UI/writer code and synthetic content. The actual panel follows your Obsidian theme; controls support Chinese and English. [See six version-labelled workflow images](docs/SCREENSHOTS.md), including archive recovery and review plans.*
+*First-release feature illustration with simulated content, not a native Obsidian screenshot. The actual panel follows your theme and supports Chinese/English controls. [See eight illustrated workflow frames](docs/SCREENSHOTS.md).*
 
 **Privacy:** Screen Q&A captures the selected display, including other application windows. A preview is shown before sending by default. The question, recent conversation and screenshot or selected file excerpts are sent to your configured provider. API keys use Obsidian SecretStorage. Chat histories and exported notes are local vault data that may be copied by vault sync. See [SECURITY.md](SECURITY.md) for storage, cancellation and Codex details.
 
@@ -38,7 +38,7 @@ Community review may flag filesystem access and child processes used by the opti
 
 Requires Obsidian **1.13.0 or newer** on desktop. Mobile is not supported.
 
-Open **Settings → Community plugins → Browse**, search for **Screen and File QA**, install it and enable it. Alternatively, select **Add to Obsidian** on the [official plugin page](https://community.obsidian.md/plugins/current-note-chat). On September 29, 2026, the public listing showed **0.15.0**, and the automated review for release commit `84d0466` was **Completed**. [GitHub release 0.15.0](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/0.15.0) also provides manual installation assets.
+Open **Settings → Community plugins → Browse**, search for **Screen and File QA**, install it and enable it. Alternatively, select **Add to Obsidian** on the [official plugin page](https://community.obsidian.md/plugins/current-note-chat). [GitHub 1.0.0 first release](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/1.0.0) provides manual installation assets. The community directory may synchronize later; check its displayed version before installation.
 
 For manual installation, extract the **plugin ZIP** from a release into your vault's configuration directory under `plugins/current-note-chat/`. The default configuration directory is `.obsidian`; it can be customized.
 
@@ -106,7 +106,7 @@ The extra request can incur provider charges. It sends up to 8,000 question char
 
 ## Data and limits
 
-### Recovery, consolidation and review plans in 0.15.0
+### Recovery, consolidation and review plans
 
 Conversation saving must succeed before automatic classification. Failed saving retains a recovery task. The local journal stores classification results and prepared writes, allowing completed classifications to resume without another provider request. Uncertain in-flight requests pause for an explicit retry. Up to 20 jobs retain answers of up to 64,000 characters; disabling archiving/automatic saving or changing the knowledge folder cancels old jobs. Source renames and automatic/manual Feynman archiving share stable identities within the 400-record archive history.
 
@@ -116,7 +116,7 @@ Automatic appends skip identical summary text and retain new source links. For s
 
 Feynman completion records local **1, 3, 7 and 14 day** review plans, retaining up to 100 topics. Early practice does not advance the interval or count as delayed retention evidence. Plans send no background requests or system notifications. Select **Review plan** or **View knowledge review plan**, put the material aside and start a new round. Three application difficulty levels request direct use, transfer or counterexamples. A limited source-grounded numerical check can veto inconsistent independence conclusions for fully specified probability exercises; it is not a general mathematical verifier. Provider classification quality and lasting learning outcomes still require separate evaluation.
 
-See the [0.16.0 flow audit](docs/FLOW_AUDIT_0.16.0.zh-CN.md) and the earlier [Chinese progress report](docs/OPTIMIZATION_PROGRESS.zh-CN.md) for validation and remaining work.
+See the [1.0.0 flow audit](docs/FLOW_AUDIT_1.0.0.zh-CN.md) and the [Chinese implementation report](docs/OPTIMIZATION_PROGRESS.zh-CN.md) for validation and remaining work.
 
 - New history is stored in plugin `data.json` via Obsidian `loadData`/`saveData`, alongside settings. Secret names are stored, not API secret values.
 - Appending to the asked note modifies that note with a question callout (optionally followed by the answer) and stores screenshot attachments using Obsidian's attachment settings. Appended question IDs are kept in plugin data so a retried answer never appends twice. Notes inside AI Q&A and knowledge folders are never modified, and non-Markdown targets are skipped.
@@ -162,7 +162,7 @@ npm run package
 
 `npm run package` creates clean installation and source ZIPs in `dist/`, plus `SHA256SUMS.txt`. Explicit file allowlists exclude settings, history, local backups, npm caches and dependencies. Extract the source ZIP to use it as a standalone repository.
 
-Before releasing, update `package.json`, `manifest.json`, `versions.json`, the changelog and `docs/RELEASE_NOTES.md`. A version change on `main`, an exact version tag or a manual Release workflow run starts the three-platform checks. After they pass, GitHub Actions builds the assets and publishes the corresponding release. The tag must exactly equal the manifest version, for example `0.13.2`. Follow the [official submission guide](https://docs.obsidian.md/plugins/releasing/submit-plugin) for community-directory listing.
+Before releasing, update `package.json`, `manifest.json`, `versions.json`, the changelog and `docs/RELEASE_NOTES.md`. A version change on `main`, an exact version tag or a manual Release workflow run starts the three-platform checks. After they pass, GitHub Actions builds the assets and publishes the corresponding release. The tag must exactly equal the manifest version, for example `1.0.0`. Follow the [official submission guide](https://docs.obsidian.md/plugins/releasing/submit-plugin) for community-directory listing.
 
 ## License
 

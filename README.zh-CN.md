@@ -6,13 +6,13 @@
 
 插件免费开源。AI 服务可能需要独立账号、API 密钥或订阅，并按请求收费。支持 OpenAI、DeepSeek、已登录 Codex CLI 使用的服务及你填写的兼容接口。插件不包含统计追踪或广告。
 
-[观看 0.16.0 新版宣传片（45 秒）](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/download/0.16.0/Screen-and-File-QA-0.16.0-45s.mp4) · [分镜与可编辑工程](docs/media/promo-0.16.0/README.zh-CN.md)
+[观看 1.0.0 首发宣传片（45 秒）](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/download/1.0.0/Screen-and-File-QA-1.0.0-45s.mp4) · [分镜与可编辑工程](docs/media/promo-1.0.0/README.zh-CN.md)
 
-*1080p · 中文字幕 · 无音轨。基于新版功能绘制的示意画面，使用模拟内容，非实机录屏；展示连续提问、原笔记写回、截图附件、主题归档、费曼学习与复习。*
+*1080p · 中文字幕 · 无音轨。基于首发功能绘制的示意画面，使用模拟内容，非实机录屏；展示连续提问、原笔记写回、截图附件、主题归档、费曼学习与复习。*
 
-![优化后的知识笔记与来源链接](docs/images/guide-knowledge-0.15.0.jpg)
+![优化后的知识笔记与来源链接](docs/images/first-release-05-knowledge.png)
 
-*基于 0.15.0 界面与笔记生成代码、模拟内容的浏览器说明图，实际界面跟随 Obsidian 主题。发布名称为 Screen and File QA，面板和设置支持中文。[查看六张注明版本的功能说明图](docs/SCREENSHOTS.zh-CN.md)，包含归档恢复与复习计划。*
+*首发版功能示意，使用模拟内容，非原生 Obsidian 实机截图。实际界面跟随 Obsidian 主题；面板和设置支持中文。[查看八张首发流程说明图](docs/SCREENSHOTS.zh-CN.md)。*
 
 **隐私：** 屏幕问答会截取指定显示器，画面可能包含其他应用窗口。默认先预览，确认后才发送。问题、近期对话、截图或选取的文件片段会发送给你配置的 AI 服务商。API 密钥使用 Obsidian SecretStorage；聊天记录和导出的问答笔记属于本地仓库数据，可能随仓库同步或备份。服务商自己的数据保留政策仍然适用。
 
@@ -37,7 +37,7 @@
 
 需要 **Obsidian 1.13.0 或更新版本**，仅支持桌面端。
 
-在“设置 → 第三方插件 → 浏览”中搜索 **Screen and File QA**，安装后启用。也可以从[官方插件页面](https://community.obsidian.md/plugins/current-note-chat)点击 **Add to Obsidian**。2026-09-29 核实公开页面的当前版本为 **0.15.0**，发行提交 `84d0466` 的自动检查状态为 **Completed**。[GitHub 0.15.0 Release](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/0.15.0)也提供手动安装文件。
+在“设置 → 第三方插件 → 浏览”中搜索 **Screen and File QA**，安装后启用。也可以从[官方插件页面](https://community.obsidian.md/plugins/current-note-chat)点击 **Add to Obsidian**。[GitHub 1.0.0 首发版](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/1.0.0)提供手动安装文件。社区目录可能稍后同步，请以页面实际显示的版本为准。
 
 从 GitHub Release 下载 **plugin ZIP**，解压到仓库配置目录的 `plugins/current-note-chat/` 中。默认配置目录为 `.obsidian`，也可能被用户改过。
 
@@ -103,7 +103,7 @@ Codex 使用临时目录和只读会话。插件会查找仓库外的 CLI 可执
 
 归档请求可能产生额外费用，每次最多发送问题 8000 字、回答 24000 字和 120 个候选名称/路径；较长回答的摘要可能只覆盖部分内容，完整对话仍可查看。可关闭「AI 自动分类归档」，修改「知识笔记保存位置」，或用命令「将当前回答归档到知识笔记」手动归档完整回答。关闭自动保存也会停止自动归档；已取消的任务不会因为立即重新开启设置而恢复。旧回答不会自动补归档。
 
-### 可靠保存、整理与费用控制（0.15.0）
+### 可靠保存、整理与费用控制
 
 - 对话保存失败时暂停分类，把恢复任务保存在本地。重启或主动重试时先恢复对话笔记；如果原对话已切换，会使用单独的恢复笔记，保留原来的回答。
 - 分类结果和写入进度记录在插件数据中，已完成分类的任务恢复写入时不再次请求 AI。收费请求的结果不明确时暂停，等待主动重试。任务最多保留 20 个，单个原回答最多保留 64000 字符；关闭归档、关闭自动保存或修改知识目录会取消旧任务。
@@ -158,11 +158,11 @@ npm run package
 
 打包在 `dist/` 生成安装包、源码包和校验和。它们采用文件白名单，排除配置、聊天记录、备份、依赖和缓存。源码包可以直接解压为独立 GitHub 仓库。
 
-发布前同步修改 `package.json`、`manifest.json`、`versions.json`、更新记录及 `docs/RELEASE_NOTES.md`。修改 `main` 分支上的版本、推送精确版本标签或手动运行 Release workflow，都会先检查三个桌面系统，再构建并发布 Release。标签必须与 manifest 版本完全一致，例如 `0.13.2`，不加 `v`。需要上架时按[官方指南](https://docs.obsidian.md/plugins/releasing/submit-plugin)提交。
+发布前同步修改 `package.json`、`manifest.json`、`versions.json`、更新记录及 `docs/RELEASE_NOTES.md`。修改 `main` 分支上的版本、推送精确版本标签或手动运行 Release workflow，都会先检查三个桌面系统，再构建并发布 Release。标签必须与 manifest 版本完全一致，例如 `1.0.0`，不加 `v`。需要上架时按[官方指南](https://docs.obsidian.md/plugins/releasing/submit-plugin)提交。
 
 实际 Obsidian 使用、系统权限和演示截图的检查步骤见 [发布检查表](docs/RELEASE_CHECKLIST.md)。
 
-0.15.0 的已实现功能、测试证据与剩余工作见[优化实施记录](docs/OPTIMIZATION_PROGRESS.zh-CN.md)。[深入优化清单](docs/OPTIMIZATION_ROADMAP.zh-CN.md)保留 0.14.0 的复查背景；真实模型分类质量、长期学习效果和各系统 Obsidian 实机验证仍待完成。
+首发版的已实现功能与测试证据见[实施记录](docs/OPTIMIZATION_PROGRESS.zh-CN.md)。后续工作见[优化清单](docs/OPTIMIZATION_ROADMAP.zh-CN.md)；真实模型分类质量、长期学习效果和各系统实机验证仍待完成。
 
 ## 许可证
 

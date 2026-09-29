@@ -5,7 +5,7 @@ import struct
 from pathlib import Path
 
 root = Path(__file__).resolve().parent
-movie = root / 'Screen-and-File-QA-0.16.0-45s.mp4'
+movie = root / 'Screen-and-File-QA-1.0.0-45s.mp4'
 data = movie.read_bytes()
 
 def u32(p):
@@ -93,6 +93,6 @@ assert info['width'] == 1920 and info['height'] == 1080
 assert 44 <= info['duration_seconds'] <= 46
 assert info['codec'] == 'avc1' and info['audio_tracks'] == 0
 assert info['video_frames'] == 1350 and info['average_fps'] == 30
-record = {'title': 'AI 回答，回到你的笔记', 'plugin_version': '0.16.0', 'date': '2026-09-29', 'video': info, 'visuals': 'Locally rendered feature illustrations based on the 0.16.0 source behavior, with simulated content; not native Obsidian recordings.', 'sound': 'No voice-over or background music.', 'publication': {'github': 'prepared', 'bilibili': 'not_submitted', 'xiaohongshu': 'not_submitted'}}
+record = {'title': 'AI 回答，回到你的笔记', 'plugin_version': '1.0.0', 'date': '2026-09-29', 'video': info, 'visuals': 'Locally rendered feature illustrations based on the 1.0.0 source behavior, with simulated content; not native Obsidian recordings.', 'sound': 'No voice-over or background music.', 'publication': {'github': 'prepared', 'bilibili': 'user_will_submit', 'xiaohongshu': 'user_will_submit'}}
 (root / 'production.json').write_text(json.dumps(record, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 print(json.dumps(record, ensure_ascii=False, indent=2))

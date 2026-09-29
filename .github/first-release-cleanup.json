@@ -1,0 +1,86 @@
+{
+  "releases": [
+    {
+      "id": 399006414,
+      "tag": "0.16.0"
+    },
+    {
+      "id": 398805007,
+      "tag": "0.15.0"
+    },
+    {
+      "id": 398368325,
+      "tag": "0.14.0"
+    }
+  ],
+  "tags": [
+    {
+      "ref": "tags/0.13.2",
+      "sha": "dd562bef022997cdea760dd026eda9fcfd9ec48b"
+    },
+    {
+      "ref": "tags/0.13.3",
+      "sha": "94762144ed048484001f166ad71d3652f5da9002"
+    },
+    {
+      "ref": "tags/0.13.4",
+      "sha": "9ff2eaa00020fd8328e8e41d2fd9746023015c2c"
+    },
+    {
+      "ref": "tags/0.13.5",
+      "sha": "b0bac8e2daf6d0ed94ea83e525213154c84a0e8d"
+    },
+    {
+      "ref": "tags/0.13.6",
+      "sha": "5d82fbe58a7a0cd06c0730d1b34eeeeff3c92d35"
+    },
+    {
+      "ref": "tags/0.13.7",
+      "sha": "6c9e6a264302fc576b713ad838e8a616711313f7"
+    },
+    {
+      "ref": "tags/0.14.0",
+      "sha": "2259d16dad8ea9ccca0ad6d56b0b071399043c72"
+    },
+    {
+      "ref": "tags/0.15.0",
+      "sha": "84d0466c468b8fedafa49997bb86a2e0c3984159"
+    },
+    {
+      "ref": "tags/0.16.0",
+      "sha": "62d6fde8f5829f0c9925657526bb7b0b46198587"
+    }
+  ],
+  "expected": [
+    {
+      "name": "main.js",
+      "size": 2824433,
+      "digest": "sha256:49e9a46fb59d52a2c4f0772b7cda63098fe94d3317aec3cf146e3176e36052fd"
+    },
+    {
+      "name": "manifest.json",
+      "size": 396,
+      "digest": "sha256:930008244d8d45f2b9e04ae83fb400b4f13f209c792c2a01c9f8a9d7a5487479"
+    },
+    {
+      "name": "styles.css",
+      "size": 16679,
+      "digest": "sha256:db2592bca69762dd79fd2a5fb687a84aed6790267f645beb23e40a7aca33c52b"
+    },
+    {
+      "name": "Screen-and-File-QA-1.0.0-45s.mp4",
+      "size": 1742022,
+      "digest": "sha256:f4f8bafeae61a394cff05988991bad59a8ac0ec1492a4d94958dc39f68910e5d"
+    },
+    {
+      "name": "Screen-and-File-QA-1.0.0-cover.png",
+      "size": 97467,
+      "digest": "sha256:85d10fe45f025cea22c1626f140f03e8d0afa1a16b78d3b50f8265f33b6016e7"
+    },
+    {
+      "name": "Screen-and-File-QA-1.0.0-zh-CN.srt",
+      "size": 707,
+      "digest": "sha256:7a545b14c4d77ebcfa1e5c18ff5a73e7b05cf739a38ec0f0bb777b00bb81466d"
+    }
+  ]
+}

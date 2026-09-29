@@ -1,38 +1,42 @@
 name: Publish promo video
 on:
-  push:
-    branches: [main]
-    paths: ['docs/media/promo-0.16.0/**', '.github/workflows/publish-promo.yml']
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: publish-promo-0.16.0
+  group: publish-promo-1.0.0
   cancel-in-progress: false
 jobs:
   publish:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - name: Verify and attach promotional media to existing release
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('node:fs');
             const crypto = require('node:crypto');
-            const folder = 'docs/media/promo-0.16.0';
+            if (JSON.parse(fs.readFileSync('manifest.json', 'utf8')).version !== '1.0.0') { core.notice('This media workflow only handles the first release.'); return; }
+            const folder = 'docs/media/promo-1.0.0';
             const parts = Array.from({ length: 5 }, (_, i) => fs.readFileSync(`${folder}/video.mp4.part${String(i).padStart(3, '0')}`));
             const movie = Buffer.concat(parts);
             const digest = crypto.createHash('sha256').update(movie).digest('hex');
-            if (movie.length !== 1748275 || digest !== '44261393f6f2544a33b948724065546c45d7bafa3e7007abc46e02b787594d34') throw new Error('Video integrity mismatch');
-            const { data: release } = await github.rest.repos.getReleaseByTag({ ...context.repo, tag: '0.16.0' });
+            if (movie.length !== 1742022 || digest !== 'f4f8bafeae61a394cff05988991bad59a8ac0ec1492a4d94958dc39f68910e5d') throw new Error('Video integrity mismatch');
+            const { data: release } = await github.rest.repos.getReleaseByTag({ ...context.repo, tag: '1.0.0' });
             if (release.draft || release.prerelease) throw new Error('Expected an existing public stable release');
             const files = [
-              { name: 'Screen-and-File-QA-0.16.0-45s.mp4', data: movie, type: 'video/mp4' },
-              { name: 'Screen-and-File-QA-0.16.0-cover.png', data: fs.readFileSync(`${folder}/cover.png`), type: 'image/png' },
-              { name: 'Screen-and-File-QA-0.16.0-zh-CN.srt', data: fs.readFileSync(`${folder}/zh-CN.srt`), type: 'text/plain; charset=utf-8' }
+              { name: 'Screen-and-File-QA-1.0.0-45s.mp4', data: movie, type: 'video/mp4' },
+              { name: 'Screen-and-File-QA-1.0.0-cover.png', data: fs.readFileSync(`${folder}/cover.png`), type: 'image/png' },
+              { name: 'Screen-and-File-QA-1.0.0-zh-CN.srt', data: fs.readFileSync(`${folder}/zh-CN.srt`), type: 'text/plain; charset=utf-8' }
             ];
             for (const file of files) {
               const existing = release.assets.find(asset => asset.name === file.name);
@@ -44,10 +48,15 @@ jobs:
               }
               await github.rest.repos.uploadReleaseAsset({ ...context.repo, release_id: release.id, name: file.name, data: file.data, headers: { 'content-type': file.type, 'content-length': file.data.length } });
             }
-            const root = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/0.16.0`;
-            const marker = '<!-- promo-video-0.16.0 -->';
+            const root = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/1.0.0`;
+            const marker = '<!-- promo-video-1.0.0 -->';
             if (!(release.body || '').includes(marker)) {
-              const text = `\n\n${marker}\n## 45-second video / 45 秒宣传片\n\n[Watch or download MP4 / 观看或下载宣传片](${root}/Screen-and-File-QA-0.16.0-45s.mp4) · [Cover / 封面](${root}/Screen-and-File-QA-0.16.0-cover.png) · [Chinese subtitles / 中文字幕](${root}/Screen-and-File-QA-0.16.0-zh-CN.srt)\n\n1920 × 1080 · 16:9 · 30 fps · Chinese captions · no audio. The video uses locally rendered feature illustrations based on 0.16.0 behavior and simulated content, not native Obsidian recordings. AI providers may charge for requests.\n`;
+              const text = `\n\n${marker}\n## 45-second video / 45 秒宣传片\n\n[Watch or download MP4 / 观看或下载宣传片](${root}/Screen-and-File-QA-1.0.0-45s.mp4) · [Cover / 封面](${root}/Screen-and-File-QA-1.0.0-cover.png) · [Chinese subtitles / 中文字幕](${root}/Screen-and-File-QA-1.0.0-zh-CN.srt)\n\n1920 × 1080 · 16:9 · 30 fps · Chinese captions · no audio. The video uses locally rendered feature illustrations based on 1.0.0 behavior and simulated content, not native Obsidian recordings. AI providers may charge for requests.\n`;
               await github.rest.repos.updateRelease({ ...context.repo, release_id: release.id, body: (release.body || '') + text });
             }
-            await core.summary.addHeading('Promotional video published').addLink('Public MP4', `${root}/Screen-and-File-QA-0.16.0-45s.mp4`).addRaw('\n45 seconds, 1080p, 30 fps. Integrity verified before upload.').write();
+            await core.summary.addHeading('Promotional video published').addLink('Public MP4', `${root}/Screen-and-File-QA-1.0.0-45s.mp4`).addRaw('\n45 seconds, 1080p, 30 fps. Integrity verified before upload.').write();
+      - name: Remove only the verified superseded releases and version tags
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await require('./.github/cleanup-first-release.cjs')({ github, context, core });

@@ -7,13 +7,13 @@ Prepared repository: `https://github.com/clarkdonaldtfgbw5081-del/current-note-c
 | Plugin ID | `current-note-chat` |
 | Plugin name | Screen and File QA |
 | Maintainer | clarkdonaldtfgbw5081-del |
-| Initial public version | `0.13.2` |
+| Initial public version | `1.0.0` |
 | Minimum app version | `1.13.0` |
 | Platforms | Desktop only |
 
-On 2026-09-28, the public `obsidianmd/obsidian-releases` plugin catalog contained no entry with this ID. The community directory's validation at submission remains authoritative.
+This repository already has a community-directory listing. Keep that entry and its plugin ID; request or wait for the 1.0.0 release review and synchronization rather than creating a duplicate listing. The directory's displayed version and review remain authoritative.
 
-Before submitting, verify that the repository is public, the default branch contains the source/README/LICENSE/manifest, and the public GitHub release whose tag is `0.13.2` contains separate `main.js`, `manifest.json` and `styles.css` assets.
+Before submitting, verify that the repository is public, the default branch contains the source/README/LICENSE/manifest, and the public GitHub release whose tag is `1.0.0` contains separate `main.js`, `manifest.json` and `styles.css` assets.
 
 Current official submission uses [community.obsidian.md](https://community.obsidian.md), as described in the [submission guide](https://docs.obsidian.md/plugins/releasing/submit-plugin) and [account setup guide](https://docs.obsidian.md/community-directory/set-up-and-claim):
 

@@ -5,7 +5,7 @@
 - Run `npm ci --ignore-scripts` in a fresh source checkout.
 - Run `npm run package`. This includes linting, regressions, a production build and release validation.
 - Review `npm audit`, bundled dependency notices and ZIP contents.
-- Confirm package version, manifest version, tag and `versions.json` agree. Tags use `0.13.2`, without a `v` prefix.
+- Confirm package version, manifest version, tag and `versions.json` agree. Tags use `1.0.0`, without a `v` prefix.
 - CI covers Windows, macOS and Linux with Node.js 22. CI results appear only after the source is pushed to GitHub.
 
 ## Obsidian smoke tests

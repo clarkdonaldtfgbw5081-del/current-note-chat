@@ -1,4 +1,4 @@
-"""Render the 0.16.0 feature illustration locally; no private notes or AI requests.
+"""Render the 1.0.0 feature illustration locally; no private notes or AI requests.
 
 Python 3 + Pillow; FFmpeg supplied by imageio-ffmpeg 0.6.0.
 Run with --preview for cover/stills only, or without arguments for the MP4.
@@ -19,7 +19,7 @@ sys.path.insert(0, str(ROOT.parent / 'media-tools'))
 import imageio_ffmpeg
 
 W, H, FPS, SECONDS = 1920, 1080, 30, 45
-MOVIE = ROOT / 'Screen-and-File-QA-0.16.0-45s.mp4'
+MOVIE = ROOT / 'Screen-and-File-QA-1.0.0-45s.mp4'
 PAPER = '#F3F2EB'
 INK = '#18392F'
 MUTED = '#697C73'
@@ -89,7 +89,7 @@ def base(index):
     rr(d, (90,62,46,46), INK, 13)
     note_icon(d, 103,71,0.75,WHITE)
     text(d, (154,68), 'Screen and File QA', 29, INK, True)
-    pill(d, 1535,61, 'OBSIDIAN · 0.16.0', WHITE, GREEN, 23, 22, 46)
+    pill(d, 1535,61, 'OBSIDIAN · 1.0.0', WHITE, GREEN, 23, 22, 46)
     rule(d,90,139,1740)
     if index not in (0,7):
         text(d, (94,205), f'{index:02d} / 学习流程', 22, MUTED, True)
@@ -118,7 +118,7 @@ def small_label(d, x, y, a, b):
     text(d,(x,y+32),b,25,INK,True)
 
 def intro(d, stage):
-    pill(d,94,215,'0.16.0 更新',LIME,INK,24)
+    pill(d,94,215,'1.0.0 首发',LIME,INK,24)
     lines(d,(90,309),['把问题留下。','把理解练出来。'],78,109,INK,True)
     lines(d,(96,583),['连续提问 · 自动写回 · 主题归档','费曼学习 · 间隔复习'],30,49,MUTED)
     pill(d,95,746,'免费开源 / 桌面插件',WHITE,GREEN,25)
@@ -148,7 +148,7 @@ def qa(d, stage):
     text(d,(1579,818),'发送',23,GREEN,True)
 
 def queue(d, stage):
-    heading(d,['问题来了，','不用等回答。'],['普通问答期间继续输入','最多排队 5 条，按顺序执行'],'0.16.0 新增 · 连续提问')
+    heading(d,['问题来了，','不用等回答。'],['普通问答期间继续输入','最多排队 5 条，按顺序执行'],'首发功能 · 连续提问')
     app(d,'连续提问','正在回答')
     rr(d,(820,286,970,122),PAPER,18)
     text(d,(845,311),'正在解释：独立性和互斥的区别',28,INK,True)
@@ -169,7 +169,7 @@ def queue(d, stage):
     text(d,(825,793),'停止或请求失败 → 暂停队列，主动继续再发送',25,GREEN,True)
 
 def source(d, stage):
-    heading(d,['答案，回到','你的原笔记。'],['问题、可选回答与对话链接','截图保存为仓库中的 PNG 附件'],'0.16.0 新增 · 原笔记写回')
+    heading(d,['答案，回到','你的原笔记。'],['问题、可选回答与对话链接','截图保存为仓库中的 PNG 附件'],'首发功能 · 原笔记写回')
     app(d,'概率与独立性.md','笔记示意')
     text(d,(829,290),'独立性',35,INK,True)
     text(d,(831,345),'我的课堂笔记：独立性描述事件之间的概率关系。',25,MUTED)
@@ -251,7 +251,7 @@ def outro(d, stage):
     pill(d,95,655,'Screen and File QA',WHITE,GREEN,30,h=61)
     text(d,(97,772),'桌面 Obsidian 1.13.0+  ·  免费开源',27,INK,True)
     rr(d,(1050,232,748,558),INK,32)
-    text(d,(1101,280),'0.16.0',28,LIME,True)
+    text(d,(1101,280),'1.0.0',28,LIME,True)
     for i,label in enumerate(['继续排队提问','问题与回答写回原笔记','截图保存为附件','知识归档 · 费曼学习 · 复习']):
         y=368+i*85
         check(d,1102,y+2)
@@ -292,7 +292,7 @@ def render(t):
     center(d,(90,928,1740,72),caption,29,WHITE,True)
     rule(d,90,1019,1740,LINE,3)
     rule(d,90,1019,int(1740*t/SECONDS),GREEN,3)
-    text(d,(93,1038),'0.16.0 功能示意 · 模拟内容 · 非 Obsidian 实机录屏',20,MUTED)
+    text(d,(93,1038),'1.0.0 功能示意 · 模拟内容 · 非 Obsidian 实机录屏',20,MUTED)
     text(d,(1637,1037),f'{int(t):02d} / 45 秒',21,MUTED,True)
     return im
 
@@ -301,7 +301,7 @@ def cover():
     d=ImageDraw.Draw(im)
     rr(d,(95,85,285,59),INK,18)
     center(d,(95,85,285,59),'OBSIDIAN 插件',25,WHITE,True)
-    pill(d,415,92,'0.16.0',LIME,INK,23)
+    pill(d,415,92,'1.0.0',LIME,INK,23)
     lines(d,(91,254),['AI 回答，','回到你的笔记。'],88,125,INK,True)
     text(d,(98,603),'连续提问 / 自动写回 / 知识归档',32,MUTED)
     pill(d,97,709,'费曼学习 + 间隔复习',WHITE,GREEN,31,h=65)
@@ -344,7 +344,7 @@ def encode():
     cmd=[exe,'-y','-hide_banner','-loglevel','warning','-f','rawvideo','-vcodec','rawvideo',
          '-pix_fmt','rgb24','-s',f'{W}x{H}','-r',str(FPS),'-i','-',
          '-an','-c:v','libx264','-preset','fast','-crf','19','-pix_fmt','yuv420p',
-         '-movflags','+faststart','-metadata','title=Screen and File QA 0.16.0',str(MOVIE)]
+         '-movflags','+faststart','-metadata','title=Screen and File QA 1.0.0',str(MOVIE)]
     with (ROOT/'encoding.log').open('w',encoding='utf-8') as log:
         proc=subprocess.Popen(cmd,stdin=subprocess.PIPE,stderr=log)
         try:

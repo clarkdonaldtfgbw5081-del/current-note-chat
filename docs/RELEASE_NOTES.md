@@ -1,16 +1,26 @@
-# Screen and File QA 0.16.0
+# Screen and File QA 1.0.0 — First release / 首发版
 
-Keep finished questions beside their source, and queue follow-up questions while an answer streams.
+Turn questions into readable notes and structured learning practice in desktop Obsidian.
 
-- **Write back to the asked note:** append a question callout, an optional AI answer and a conversation link. Screen questions bind to the Markdown note open when submitted or queued; switching notes while waiting cannot redirect the write. Screenshot questions become PNG vault attachments using Obsidian's attachment settings. The source-write toggle is independent of conversation auto-save; turn it off to stop both source appends and their screenshot attachments.
-- **Question queue:** Enter queues up to five removable questions during ordinary Q&A. Questions execute in order within their source conversation when that source is active. File and folder renames preserve queued questions; deleted or replaced files drop them. Screenshots are captured when the queued question executes. Stop or provider failure pauses the remaining queue until Resume or a new explicit submission. Queues are held in memory and cleared on unload.
-- **Write protection:** AI Q&A and knowledge folders are excluded; disabling source writes, unloading or deleting/moving a target during attachment saving prevents a late append. Unsafe attachment paths are rejected. Unavailable attachment configuration uses an actual fallback PNG. Source-write failures are reported while the answer remains in the chat. Per-answer mode includes its generated note link, and empty notes do not acquire a stray frontmatter delimiter.
-- Keep Feynman submissions locked during assessment; ordinary Q&A remains editable. Remove the unused legacy streaming wrapper.
+- **Screen and file Q&A:** preview the selected display before sending, or ask about Markdown, PDF, DOC/DOCX and text files. Stream responses, stop requests and retry a specific question.
+- **Continuous questions:** queue up to five ordinary follow-ups while an answer streams. Stop or provider failure pauses remaining sends until explicit resume. Queues are held in memory and cleared on unload; Feynman assessment waits for the current stage.
+- **Automatic notes:** keep each conversation in one Markdown note. Write questions, optional answers and conversation links beside their source; save screenshot questions as PNG vault attachments. Protect handwritten content and exclude AI Q&A/knowledge folders from source appends.
+- **Topic archiving:** find matching notes only inside the configured knowledge directory, retain provenance links and send uncertain content to Inbox. Recovery journals protect knowledge writes; consolidation changes are reviewed before application.
+- **Feynman learning:** explain in your own words, solve an application and teach it back. Record feedback and local 1/3/7/14-day reviews.
+- **Reviewed revisions and settings:** preview Markdown edits, preserve intervening changes, and configure saving, source writes, classification and providers independently.
 
-This release retains the 0.15.0 scoped classification, recovery journals, consolidation previews and local 1/3/7/14-day review plans. Source appends retain 200 recent question IDs for duplicate prevention; this is separate from the recoverable knowledge-archive journal and does not guarantee deduplication across crashes or older evicted IDs. PNG attachments persist in the vault and may sync or be backed up. Generated answers and summaries still require checking.
+## 安装与视频
 
-Local validation: 136 automated regressions, lint, production build, release checks and PDF extraction using only the three installation assets. The release workflow checks Windows/macOS/Linux before publication. Real-provider response quality, native Obsidian themes, screen-recording permissions and multi-device conflicts still require manual verification.
+需要桌面 Obsidian 1.13.0+。社区插件发布名称为 **Screen and File QA**。手动安装时复制 `main.js`、`manifest.json`、`styles.css`；plugin ZIP 是安装包，source ZIP 是源码。
 
-Restart Obsidian or reload the plugin after updating. Desktop Obsidian 1.13.0 or newer is required. Manual installation uses `main.js`, `manifest.json` and `styles.css` in `.obsidian/plugins/current-note-chat/`.
+首发宣传片为 45 秒、1080p、16:9、30 fps、中文字幕、无音轨。使用模拟内容和功能示意，非 Obsidian 实机录屏。
 
-See [CHANGELOG.md](../CHANGELOG.md) for earlier releases and the [flow audit](FLOW_AUDIT_0.16.0.zh-CN.md) for detailed verification and remaining work.
+插件免费开源；AI 服务自行配置，可能收费。答案、知识分类和学习评估需要核对。截图、笔记和对话可能随仓库同步或备份。
+
+## Validation and limits
+
+136 automated regressions, lint, production build, release validation and PDF extraction with only the three installation files are checked locally. The release workflow verifies Windows/macOS/Linux before publication.
+
+Source appends retain 200 recent question IDs; this differs from the recoverable knowledge-archive journal and does not guarantee crash-proof or unbounded deduplication. Real-provider response quality, native themes, recording permissions and multi-device conflicts still require manual verification.
+
+See the [first-release flow audit](FLOW_AUDIT_1.0.0.zh-CN.md) and [remaining optimization work](OPTIMIZATION_ROADMAP.zh-CN.md).
