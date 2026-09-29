@@ -350,6 +350,7 @@ class CurrentNoteChatWidget {
       if (ownsThread && !reply.error && !reply.streaming && this.plugin.settings.qaAppendSource && this.plugin.sourceNotes) {
         const target = snapshot?.sourceTarget !== undefined ? snapshot.sourceTarget : sourceTarget;
         if (target?.extension?.toLowerCase() === 'md') void this.plugin.sourceNotes.append(target.path, { id: user.id, question, answer: reply.text, screenshot: snapshot?.screenshot || null, transcriptPath: transcriptPath || null, mode });
+        else new Notice(L('提问未写入笔记：', 'Question not appended: ') + (mode === 'file' ? L('被提问的是 PDF 等非 Markdown 文件，只有 Markdown 笔记能写入。', 'the asked file is not a Markdown note; only Markdown notes can receive appends.') : target ? L('提问时打开的不是 Markdown 笔记，屏幕提问只写入当时打开的 Markdown 笔记。', 'no Markdown note was open when asking; screen questions only append to the Markdown note open at ask time.') : L('提问时没有打开任何 Markdown 笔记，屏幕提问需要一个打开的笔记作为写入目标。', 'no Markdown note was open when asking; screen questions need an open note as the write target.')), 8000);
       }
       this.busy = false; this.requestController = null;
       if (!this.unmounted) { this.plugin.queueSaveSessions(); this.refresh(); this.drainQueue(); }

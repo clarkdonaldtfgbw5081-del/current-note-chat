@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+- Explain question write-back skips instead of failing silently: when a finished question is not appended to a note, a notice states whether the asked file is not Markdown or no Markdown note was open when asking a screen question.
+
 ## 1.0.0 — First release
 
 - Ask AI about the selected display or current file, stream answers, stop requests and retry specific questions. Preview screenshots before sending by default.

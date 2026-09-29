@@ -1,3 +1,9 @@
+# Screen and File QA 1.0.1
+
+Explain question write-back skips instead of failing silently.
+
+- When **Append questions to the asked note** skips a write, a notice now states the reason: the asked file is not Markdown, or no Markdown note was open when asking a screen question. Open the target Markdown note (screen Q&A) or ask about a Markdown file (file Q&A) to record the question.
+
 # Screen and File QA 1.0.0 — First release / 首发版
 
 Turn questions into readable notes and structured learning practice in desktop Obsidian.

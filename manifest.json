@@ -1,7 +1,7 @@
 {
   "id": "current-note-chat",
   "name": "Screen and File QA",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "minAppVersion": "1.13.0",
   "description": "Ask AI about your screen or files, practise concepts with Feynman learning, save conversations and organize answers into topic notes.",
   "author": "clarkdonaldtfgbw5081-del",
