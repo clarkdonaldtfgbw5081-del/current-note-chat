@@ -6,6 +6,12 @@
 
 插件免费开源。AI 服务可能需要独立账号、API 密钥或订阅，并按请求收费。支持 OpenAI、DeepSeek、已登录 Codex CLI 使用的服务及你填写的兼容接口。插件不包含统计追踪或广告。
 
+## 45 秒宣传片
+
+[![把答案留下，把理解练出来](docs/media/promo-0.15.0/cover.png)](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/download/0.15.0/Screen-and-File-QA-0.15.0-45s.mp4)
+
+[观看或下载 MP4 宣传片](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/download/0.15.0/Screen-and-File-QA-0.15.0-45s.mp4)：1080p、16:9、30 fps、中文字幕、无音轨。展示“提问 → 自动记录 → 主题归档 → 费曼学习 → 间隔复习”的流程。视频使用 0.15.0 浏览器演示环境和模拟内容，实际外观随 Obsidian 主题变化。
+
 ![优化后的知识笔记与来源链接](docs/images/guide-knowledge-0.15.0.jpg)
 
 *基于 0.15.0 界面与笔记生成代码、模拟内容的浏览器说明图，实际界面跟随 Obsidian 主题。发布名称为 Screen and File QA，面板和设置支持中文。[查看六张注明版本的功能说明图](docs/SCREENSHOTS.zh-CN.md)，包含归档恢复与复习计划。*
