@@ -52,8 +52,8 @@
 
 2026-09-29 已核实：
 
-- [GitHub 0.14.0 Release](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/0.14.0)已公开，Windows、macOS、Linux 自动检查均通过。
-- [Obsidian 官方插件页面](https://community.obsidian.md/plugins/current-note-chat)已公开，显示当前版本 0.14.0，提供 **Add to Obsidian**；对应版本的自动审核状态为 **Completed**，健康状态 **Excellent**，审核评分 **Satisfactory**。Completed 表示检查完成，部分能力提示仍保留。
+- [GitHub 0.15.0 Release](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/0.15.0)已公开，114 项测试与 Windows、macOS、Linux 自动检查均通过。
+- [Obsidian 官方插件页面](https://community.obsidian.md/plugins/current-note-chat)已公开，显示当前版本 0.15.0，提供 **Add to Obsidian**；发行提交 `84d0466` 的自动审核状态为 **Completed**，健康状态 **Excellent**，审核评分 **Satisfactory**。构建逐字节复现、发行文件签名验证通过，旧版的仓库枚举提示已消失；可选 Codex、复制与 PDF 依赖相关能力提示仍保留。
 - 在 Obsidian 的“第三方插件 → 浏览”中搜索 **Screen and File QA**。如果你本地仍在运行旧界面，重启 Obsidian 或重新加载插件，并在已安装列表确认版本。
 
 状态会随后续版本变化；以上为注明日期时核实的结果。

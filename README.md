@@ -32,7 +32,7 @@ Community review may flag filesystem access and child processes used by the opti
 
 Requires Obsidian **1.13.0 or newer** on desktop. Mobile is not supported.
 
-Open **Settings → Community plugins → Browse**, search for **Screen and File QA**, install it and enable it. Alternatively, select **Add to Obsidian** on the [official plugin page](https://community.obsidian.md/plugins/current-note-chat). On September 29, 2026, the public listing showed **0.14.0**, and the automated review for that release was **Completed**.
+Open **Settings → Community plugins → Browse**, search for **Screen and File QA**, install it and enable it. Alternatively, select **Add to Obsidian** on the [official plugin page](https://community.obsidian.md/plugins/current-note-chat). On September 29, 2026, the public listing showed **0.15.0**, and the automated review for release commit `84d0466` was **Completed**. [GitHub release 0.15.0](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/0.15.0) also provides manual installation assets.
 
 For manual installation, extract the **plugin ZIP** from a release into your vault's configuration directory under `plugins/current-note-chat/`. The default configuration directory is `.obsidian`; it can be customized.
 

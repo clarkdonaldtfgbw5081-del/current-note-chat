@@ -2,6 +2,8 @@
 
 对应[0.14.0 复查计划](OPTIMIZATION_ROADMAP.zh-CN.md)。本次先实施可明确验证的可靠性修复，再加入知识整理、学习与费用控制功能。
 
+2026-09-29 已发布 [GitHub 0.15.0](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/0.15.0)，发行提交 `84d0466`。114 项测试、本地安装检查及 Windows/macOS/Linux CI 通过；[插件市场](https://community.obsidian.md/plugins/current-note-chat)公开当前版本为 0.15.0，自动检查 Completed，构建逐字节复现通过。市场的仓库枚举提示已消失，其他已说明的能力提示保留。
+
 | 方向 | 本次完成 | 仍需深入验证 |
 | --- | --- | --- |
 | 保存与恢复 | 对话保存成功后才分类；未保存任务先恢复对话；分类结果、写入日志可恢复；未知收费请求暂停，取消任务不复活 | 真实磁盘断电、同步软件与插件同时写入 |

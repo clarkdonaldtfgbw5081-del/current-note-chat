@@ -31,7 +31,7 @@
 
 需要 **Obsidian 1.13.0 或更新版本**，仅支持桌面端。
 
-在“设置 → 第三方插件 → 浏览”中搜索 **Screen and File QA**，安装后启用。也可以从[官方插件页面](https://community.obsidian.md/plugins/current-note-chat)点击 **Add to Obsidian**。2026-09-29 核实公开页面的当前版本为 **0.14.0**，对应版本的自动检查状态为 **Completed**。
+在“设置 → 第三方插件 → 浏览”中搜索 **Screen and File QA**，安装后启用。也可以从[官方插件页面](https://community.obsidian.md/plugins/current-note-chat)点击 **Add to Obsidian**。2026-09-29 核实公开页面的当前版本为 **0.15.0**，发行提交 `84d0466` 的自动检查状态为 **Completed**。[GitHub 0.15.0 Release](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/0.15.0)也提供手动安装文件。
 
 从 GitHub Release 下载 **plugin ZIP**，解压到仓库配置目录的 `plugins/current-note-chat/` 中。默认配置目录为 `.obsidian`，也可能被用户改过。
 
