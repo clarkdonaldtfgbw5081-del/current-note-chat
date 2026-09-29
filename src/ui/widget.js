@@ -66,6 +66,7 @@ class CurrentNoteChatWidget {
       const path = this.plugin.knowledgeNotes?.statuses.get(this.getChatKey())?.path;
       if (path && this.plugin.app.vault.getAbstractFileByPath(path)) void this.plugin.app.workspace.openLinkText(path, '', true);
     });
+    iconButton(this.archiveRow, L('归档任务与用量', 'Archive tasks and usage'), 'list-checks').addEventListener('click', () => { const { ArchiveTasksModal } = require('./archive-tasks'); new ArchiveTasksModal(this.plugin).open(); });
     this.messagesEl = root.createDiv({ cls: 'current-note-chat__messages', attr: { 'aria-live': 'polite', 'aria-label': L('对话记录', 'Conversation') } });
     const composer = root.createDiv({ cls: 'current-note-chat__composer' });
     this.inputEl = composer.createEl('textarea', { cls: 'current-note-chat__input', attr: { 'aria-label': L('问题或笔记修改要求', 'Question or note revision instruction') } });
@@ -120,16 +121,21 @@ class CurrentNoteChatWidget {
     for (const [mode, button] of Object.entries(this.modeButtons)) { button.disabled = this.busy; button.setAttribute('aria-pressed', String(this.plugin.settings.contextMode === mode)); }
     const provider = { codex: 'Codex CLI', deepseek: 'DeepSeek', openai: 'OpenAI', api: L('自定义 API', 'Custom API') }[this.plugin.settings.backend];
     this.statusEl.setText(this.busy ? `${provider} · ${L('正在处理', 'Working')}…` : `${provider}${noteSaveMode(this.plugin.settings) === 'conversation' ? ` · ${L('自动记录', 'Auto-save')}` : ''}`);
+    this.refreshArchive();
+    this.learning.refresh();
+    this.renderMessages();
+  }
+  refreshArchive() {
+    if (this.unmounted) return;
     const archive = this.plugin.knowledgeNotes?.statuses.get(this.getChatKey());
     this.archiveRow?.toggleClass('is-hidden', !archive);
     if (archive && this.archiveStatusEl) {
       const title = archive.path?.split('/').at(-1).replace(/\.md$/, '');
-      this.archiveStatusEl.setText(archive.state === 'saved' ? `${archive.inbox ? L('待整理', 'Inbox') : L('已归档', 'Archived')}: ${title}` : archive.state === 'error' ? L('归档未完成，可从命令面板重试。', 'Archiving incomplete; retry from the command palette.') : L('正在整理知识…', 'Organizing knowledge…'));
+      const labels = { queued: L('等待归档…', 'Queued for archiving…'), classifying: L('正在分类…', 'Classifying…'), paused: L('归档已暂停，可在归档任务中重试。', 'Archiving paused; retry in Archive tasks.'), cancelled: L('归档已取消。', 'Archiving cancelled.'), error: L('归档未完成，请查看归档任务。', 'Archiving incomplete; open Archive tasks.') };
+      this.archiveStatusEl.setText(archive.state === 'saved' ? `${archive.inbox ? L('待整理', 'Inbox') : L('已归档', 'Archived')}: ${title}` : labels[archive.state] || L('正在整理知识…', 'Organizing knowledge…'));
       this.archiveStatusEl.setAttribute('title', archive.error || archive.path || '');
       this.archiveButton.toggleClass('is-hidden', !archive.path); this.archiveButton.disabled = this.busy;
     }
-    this.learning.refresh();
-    this.renderMessages();
   }
   nearBottom() { return this.messagesEl.scrollHeight - this.messagesEl.scrollTop - this.messagesEl.clientHeight < 70; }
   renderMessages() {
@@ -267,8 +273,9 @@ class CurrentNoteChatWidget {
     } finally {
       clearTimeout(this._streamRenderTimer); this._streamRenderTimer = null;
       const savedKey = mode === 'file' ? file?.path || key : key;
-      if (!this.unmounted && this.plugin.messagesByNote.get(savedKey) === thread) await this.plugin.saveConversation?.(savedKey, thread, { ...meta, source: mode === 'file' ? savedKey : undefined });
-      if (!this.unmounted && this.plugin.messagesByNote.get(savedKey) === thread && noteSaveMode(this.plugin.settings) === 'conversation' && !reply.error && !reply.streaming) void this.plugin.queueKnowledgeArchive?.(savedKey, user, reply, { ...meta, source: mode === 'file' ? savedKey : undefined });
+      const transcriptPath = !this.unmounted && this.plugin.messagesByNote.get(savedKey) === thread ? await this.plugin.saveConversation?.(savedKey, thread, { ...meta, source: mode === 'file' ? savedKey : undefined }) : null;
+      if (transcriptPath && !this.unmounted && this.plugin.messagesByNote.get(savedKey) === thread && noteSaveMode(this.plugin.settings) === 'conversation' && !reply.error && !reply.streaming) void this.plugin.queueKnowledgeArchive?.(savedKey, user, reply, { ...meta, transcriptPath, source: mode === 'file' ? savedKey : undefined });
+      else if (!transcriptPath && !this.unmounted && noteSaveMode(this.plugin.settings) === 'conversation' && !reply.error && !reply.streaming) this.plugin.knowledgeNotes?.deferTranscript(savedKey, user, reply, { ...meta, source: mode === 'file' ? savedKey : undefined });
       this.busy = false; this.requestController = null;
       if (!this.unmounted) { this.plugin.queueSaveSessions(); this.refresh(); }
     }

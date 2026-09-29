@@ -507,3 +507,23 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.current-note-chat-tasks-modal .current-note-chat__archive-task {
+  margin: 12px 0;
+  padding: 12px 16px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  background: var(--background-secondary);
+  overflow-wrap: anywhere;
+}
+.current-note-chat-tasks-modal { width: min(680px, calc(100vw - 32px)); }
+.current-note-chat-tasks-modal .modal-content { max-height: 70vh; overflow-y: auto; }
+.current-note-chat-tasks-modal .current-note-chat__archive-task h3 { margin-top: 0; }
+.current-note-chat-tasks-modal .current-note-chat__archive-task button { margin: 4px 8px 4px 0; }
+.current-note-chat-tasks-modal button:focus-visible { outline: 2px solid var(--interactive-accent); outline-offset: 2px; }
+@media (max-width: 420px) {
+  .current-note-chat-float { right: 10px; bottom: 10px; }
+  .current-note-chat-float .current-note-chat-float__panel { width: calc(100vw - 20px); }
+  .current-note-chat { padding: 12px; gap: 8px; }
+  .current-note-chat__subtitle, .current-note-chat__keyboard-hint { display: none; }
+}

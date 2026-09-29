@@ -9,12 +9,17 @@ const Plugin = require('../src/main');
 function plan(extra = {}) { return JSON.stringify({ action: 'new', path: '', category: ['Mathematics', 'Probability'], title: 'Independence', confidence: 0.94, reason: 'The answer defines independence.', summary: 'Events are independent when \\(P(A \\cap B)=P(A)P(B)\\).', ...extra }); }
 function fixture(settings = {}) {
   const files = new Map(), content = new Map(), calls = [];
+  const folder = path => {
+    if (!path || files.has(path)) return;
+    const parent = path.split('/').slice(0, -1).join('/'); folder(parent);
+    files.set(path, { path, get children() { return [...files.values()].filter(item => item.path.split('/').slice(0, -1).join('/') === path); } });
+  };
   const vault = {
     getAbstractFileByPath: path => files.get(path), getMarkdownFiles: () => [...files.values()].filter(file => file instanceof TFile),
-    createFolder: async path => { files.set(path, { path }); },
-    create: async (path, text) => { assert(!files.has(path)); const file = new TFile(path); file.basename = path.split('/').at(-1).slice(0, -3); files.set(path, file); content.set(path, text); return file; },
+    createFolder: async path => { folder(path); },
+    create: async (path, text) => { assert(!files.has(path)); folder(path.split('/').slice(0, -1).join('/')); const file = new TFile(path); file.basename = path.split('/').at(-1).slice(0, -3); files.set(path, file); content.set(path, text); return file; },
     process: async (file, fn) => { content.set(file.path, fn(content.get(file.path))); },
-    cachedRead: () => { throw new Error('Candidate contents must not be read'); }
+    read: async file => content.get(file.path)
   };
   const plugin = { settings: { autoClassify: true, noteSaveMode: 'conversation', knowledgeFolder: 'AI Knowledge', ...settings }, app: { vault }, queueSaveSessions: () => {}, refreshViews: () => {}, askClassification: async (prompt, signal) => { calls.push({ prompt, signal }); return plan(); } };
   const notes = new KnowledgeNotes(plugin); plugin.knowledgeNotes = notes;
@@ -55,7 +60,7 @@ test('concurrent queueing and restarts do not classify or append the same comple
   const f = fixture(); const paths = await Promise.all([f.queue(), f.queue()]); assert.equal(paths[0], paths[1]); assert.equal(f.calls.length, 1);
   const original = f.content.get(paths[0]); f.plugin.knowledgeNotes = new KnowledgeNotes(f.plugin, JSON.parse(JSON.stringify(f.notes.serialize())));
   await f.queue(); assert.equal(f.calls.length, 1); assert.equal(f.content.get(paths[0]), original);
-  await f.queue({}, true); assert.equal(f.calls.length, 2); assert.equal(f.content.get(paths[0]), original);
+  await f.queue({}, true); assert.equal(f.calls.length, 1); assert.equal(f.content.get(paths[0]), original);
 });
 test('disabling classification or unloading during an unabortable transport prevents late writes', async () => {
   for (const unload of [false, true]) {
@@ -122,10 +127,126 @@ test('renaming a topic note updates its persisted binding and deleting it allows
 });
 test('widget archives only successful complete answers, after conversation saving', async () => {
   const f = fixture(), source = new TFile('Source.md'), order = []; f.files.set(source.path, source);
-  Object.assign(f.plugin, { activeFile: source, settings: { ...f.plugin.settings, contextMode: 'file', backend: 'api' }, messagesByNote: new Map(), currentModel: () => 'synthetic', runTask: (work, signal) => work(signal), readCurrentFile: async () => 'Synthetic context', ask: async () => 'Complete answer', saveConversation: async () => { order.push('save'); }, queueKnowledgeArchive: () => { order.push('archive'); } });
+  Object.assign(f.plugin, { activeFile: source, settings: { ...f.plugin.settings, contextMode: 'file', backend: 'api' }, messagesByNote: new Map(), currentModel: () => 'synthetic', runTask: (work, signal) => work(signal), readCurrentFile: async () => 'Synthetic context', ask: async () => 'Complete answer', saveConversation: async () => { order.push('save'); return 'AI Q&A/session.md'; }, queueKnowledgeArchive: () => { order.push('archive'); } });
   const widget = new CurrentNoteChatWidget(f.plugin); widget.inputEl = { value: 'Explain independence' }; widget.refresh = () => {};
   await widget.sendQuestion(); assert.equal(order.filter(item => item === 'archive').length, 1); assert.equal(order.at(-2), 'save'); assert.equal(order.at(-1), 'archive');
   let start; const started = new Promise(resolve => { start = resolve; }); f.plugin.ask = (...args) => { start(); return withAbort(new Promise(() => {}), args[5]); };
   widget.inputEl.value = 'Slow question'; const pending = widget.sendQuestion(); await started; widget.cancel(); await pending;
   assert.equal(order.filter(item => item === 'archive').length, 1);
+});
+
+test('renaming the source and manual archiving reuse the same stable message identity', async () => {
+  const f = fixture(); const path = await f.notes.queue('source.md', f.user, f.reply), original = f.content.get(path);
+  await f.notes.queue('renamed.md', f.user, f.reply, {}, true);
+  assert.equal(f.calls.length, 1); assert.equal(f.content.get(path), original);
+});
+
+test('a persisted prepared write resumes after restart without repeating classification', async () => {
+  const f = fixture(), create = f.vault.create; f.vault.create = async () => { throw Error('Disk unavailable'); };
+  assert.equal(await f.queue(), null); assert.equal(f.calls.length, 1);
+  const jobs = JSON.parse(JSON.stringify(f.notes.serializeJobs())); assert.equal(jobs[0].stage, 'prepared');
+  f.vault.create = create; const restored = new KnowledgeNotes(f.plugin, f.notes.serialize(), jobs, f.notes.usage); f.plugin.knowledgeNotes = restored;
+  restored.resume(); await restored.chain;
+  assert.equal(f.calls.length, 1); assert.equal(restored.jobs.size, 0); assert(f.content.get(jobs[0].plan.path).includes('Events are independent'));
+});
+
+test('a crash after writing but before metadata commit does not append a second copy', async () => {
+  const f = fixture(), create = f.vault.create; let crash = true;
+  f.vault.create = async (...args) => { const file = await create(...args); if (crash) { crash = false; throw Error('Interrupted after write'); } return file; };
+  assert.equal(await f.queue(), null); const jobs = f.notes.serializeJobs(), path = jobs[0].plan.path, original = f.content.get(path);
+  const restored = new KnowledgeNotes(f.plugin, {}, jobs); f.plugin.knowledgeNotes = restored;
+  restored.resume(); await restored.chain;
+  assert.equal(f.content.get(path), original); assert.equal(f.calls.length, 1); assert.equal(restored.records.size, 1);
+});
+
+test('uncertain requests pause on restart and are not automatically charged again', async () => {
+  const f = fixture(); let release, start; const started = new Promise(resolve => { start = resolve; });
+  f.plugin.askClassification = (...args) => { f.calls.push(args); start(); return new Promise(resolve => { release = resolve; }); };
+  const pending = f.queue(); await started; f.plugin.disposed = true; f.notes.cancel(true); release(plan()); await pending;
+  f.plugin.disposed = false; const restored = new KnowledgeNotes(f.plugin, {}, f.notes.serializeJobs()); f.plugin.knowledgeNotes = restored;
+  restored.resume(); await restored.chain;
+  assert.equal(f.calls.length, 1); assert.equal(restored.jobs.values().next().value.stage, 'paused');
+  assert.equal(await f.queue(), null); assert.equal(f.calls.length, 1);
+  f.plugin.askClassification = async (...args) => { f.calls.push(args); return plan(); };
+  assert(await restored.retry([...restored.jobs.keys()][0])); assert.equal(f.calls.length, 2);
+});
+
+test('a write conflict preserves manual edits and retries the saved plan without another AI call', async () => {
+  const f = fixture(), path = 'AI Knowledge/Independence.md'; await f.vault.create(path, '# My note\nHandwritten.\n');
+  f.plugin.askClassification = async (...args) => { f.calls.push(args); return plan({ action: 'existing', path }); };
+  let changed = false; f.plugin.saveSettings = async () => { if (!changed && [...f.notes.jobs.values()].some(job => job.stage === 'prepared')) { changed = true; f.content.set(path, f.content.get(path) + 'A concurrent manual addition.\n'); } };
+  assert.equal(await f.queue(), null); assert(f.content.get(path).includes('A concurrent manual addition')); assert(!f.content.get(path).includes('Events are independent'));
+  assert(await f.notes.retry([...f.notes.jobs.keys()][0])); assert.equal(f.calls.length, 1); assert(f.content.get(path).includes('Handwritten.')); assert(f.content.get(path).includes('Events are independent'));
+});
+
+test('transcript failures retain a recovery job and never classify before saving succeeds', async () => {
+  const f = fixture(), source = new TFile('Source.md'); f.files.set(source.path, source); let archives = 0;
+  Object.assign(f.plugin, { activeFile: source, settings: { ...f.plugin.settings, contextMode: 'file', backend: 'api' }, messagesByNote: new Map(), currentModel: () => 'synthetic', runTask: (work, signal) => work(signal), readCurrentFile: async () => 'Context', ask: async () => 'Complete answer', saveConversation: async () => null, queueKnowledgeArchive: () => { archives++; } });
+  const widget = new CurrentNoteChatWidget(f.plugin); widget.inputEl = { value: 'Question' }; widget.refresh = () => {};
+  await widget.sendQuestion(); assert.equal(archives, 0); assert.equal(f.calls.length, 0); assert.equal(f.notes.jobs.size, 1);
+  const job = [...f.notes.jobs.values()][0]; assert.equal(job.stage, 'transcript');
+  f.plugin.saveConversation = async () => 'AI Q&A/recovered.md';
+  await f.notes.retry(job.id); assert.equal(f.calls.length, 1); assert(f.content.get(job.plan.path).includes('AI Q&A/recovered.md'));
+});
+
+test('daily caps retain jobs while identical content reuses cached classification', async () => {
+  const f = fixture({ classificationDailyLimit: 1 }); await f.queue();
+  assert(await f.notes.queue('source2', newMessage('user', f.user.text), f.reply)); assert.equal(f.calls.length, 1);
+  assert.equal(await f.notes.queue('source2', newMessage('user', 'Another question'), f.reply), null);
+  assert.equal(f.calls.length, 1); assert.equal(f.notes.jobs.size, 1);
+  f.notes.usage.day = '2000-01-01'; await f.notes.retry([...f.notes.jobs.keys()][0]); assert.equal(f.calls.length, 2);
+});
+
+test('generic questions use answer keywords and bilingual aliases without vault-wide enumeration', async () => {
+  const f = fixture(); for (let i = 0; i < 130; i++) await f.vault.create(`AI Knowledge/Topic ${i}.md`, 'Private body');
+  const path = 'AI Knowledge/Z独立性.md'; await f.vault.create(path, 'Candidate body not sent');
+  f.vault.getMarkdownFiles = () => { throw Error('Must not enumerate the whole vault'); };
+  assert.equal(candidatesFor(f.vault, 'AI Knowledge', 'Explain this', [], 'Two events are independent')[0].path, path);
+  const aliasPath = 'AI Knowledge/Example.md'; await f.vault.create(aliasPath, 'Private body');
+  const cache = { getFileCache: file => file.path === aliasPath ? { frontmatter: { aliases: ['Bayes theorem'] } } : {} };
+  assert.equal(candidatesFor(f.vault, 'AI Knowledge', 'Bayesian updating', [], '', cache)[0].path, aliasPath);
+});
+
+test('archive status updates never rerender the entire conversation', async () => {
+  const f = fixture(); let statusUpdates = 0;
+  f.plugin.widget = { refreshArchive: () => { statusUpdates++; }, renderMessages: () => { throw Error('Status must not render chat'); } };
+  f.plugin.refreshViews = () => { throw Error('Status must not refresh all views'); };
+  await f.queue(); assert(statusUpdates >= 3);
+});
+
+test('explicit retry also recognizes a completed short write after a crash', async () => {
+  const f = fixture(), create = f.vault.create; f.plugin.askClassification = async (...args) => { f.calls.push(args); return plan({ summary: 'Short definition.' }); };
+  let crash = true; f.vault.create = async (...args) => { const file = await create(...args); if (crash) { crash = false; throw Error('Crash after write'); } return file; };
+  assert.equal(await f.queue(), null); const job = [...f.notes.jobs.values()][0], original = f.content.get(job.plan.path);
+  assert(await f.notes.retry(job.id)); assert.equal(f.content.get(job.plan.path), original); assert.equal(f.calls.length, 1);
+});
+
+test('undo removes only an unchanged owned section and invalidates identical-content cache bindings', async () => {
+  const f = fixture(), path = 'AI Knowledge/Independence.md'; await f.vault.create(path, '# User note\nA handwritten proof.\n');
+  f.plugin.askClassification = async (...args) => { f.calls.push(args); return plan({ action: 'existing', path }); };
+  await f.queue(); await f.notes.queue('source2', newMessage('user', f.user.text), f.reply);
+  const first = [...f.notes.records.keys()][0]; assert.equal(f.notes.records.size, 2);
+  assert(await f.notes.undo(first)); assert(f.content.get(path).includes('A handwritten proof.')); assert(!f.content.get(path).includes('Events are independent')); assert.equal(f.notes.records.size, 0);
+  await f.queue(); const id = [...f.notes.records.keys()][0]; f.content.set(path, 'Inserted by user.\n' + f.content.get(path));
+  const edited = f.content.get(path); await assert.rejects(f.notes.undo(id), /edited or shifted/); assert.equal(f.content.get(path), edited);
+});
+
+test('persisting the journal must succeed before any paid request is sent', async () => {
+  const f = fixture(); f.plugin.saveSettings = async () => { throw Error('Data storage unavailable'); };
+  assert.equal(await f.queue(), null); assert.equal(f.calls.length, 0); assert.equal(f.vault.getMarkdownFiles().length, 0);
+});
+
+test('cancelled individual tasks cannot resume after late provider results', async () => {
+  const f = fixture(); let release, start; const started = new Promise(resolve => { start = resolve; });
+  f.plugin.askClassification = () => { start(); return new Promise(resolve => { release = resolve; }); };
+  const pending = f.queue(); await started; f.notes.dismiss([...f.notes.jobs.keys()][0]); release(plan());
+  assert.equal(await pending, null); assert.equal(f.notes.jobs.size, 0); assert.equal(f.vault.getMarkdownFiles().length, 0);
+});
+
+test('legacy path-based bindings migrate before a source rename', async () => {
+  const f = fixture(), path = await f.queue(); const { hash } = require('../src/archive-journal');
+  const legacy = { [hash(`source.md:${f.user.id}`)]: [...f.notes.records.values()][0] };
+  f.plugin.messagesByNote = new Map([['source.md', [f.user, f.reply]]]);
+  const restored = new KnowledgeNotes(f.plugin, legacy); await restored.queue('renamed.md', f.user, f.reply);
+  assert.equal(f.calls.length, 1); assert.equal(f.content.get(path).split('Events are independent').length - 1, 1);
 });

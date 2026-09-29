@@ -1,16 +1,19 @@
-# Screen and File QA 0.14.0
+# Screen and File QA 0.15.0
 
-Automatically organize completed answers into reusable knowledge notes while keeping the full conversation. AI classification is enabled by default alongside automatic note saving.
+Make knowledge archiving recoverable and protect handwritten edits. Add review plans, classification request controls and explicit knowledge-consolidation previews.
 
-- Restrict candidate selection and writes to **AI Knowledge** (**AI 知识库** in a Chinese interface), or the configured knowledge folder and its subfolders. Only candidate titles/paths are sent; existing note contents are not read for classification.
-- Append a summary to a clearly matching topic note, or create a categorized note. Preserve handwritten content and link back to the full conversation and source when available.
-- Send uncertain results to **Inbox / 待整理**. When classification fails, retain the original answer there. Stopped or failed Q&A answers never trigger classification.
-- Archive completed Feynman reports; hints and unfinished stages remain in their conversation. Add a manual archive command and a status/link in the chat panel.
-- Prevent duplicate automatic writes after retries/restarts within the bounded archive history, and cancel active/queued work when settings change or the plugin unloads.
-- Keep generated notes free of opaque synchronization IDs, with native math and subordinate summary headings.
+- Save the conversation before automatic classification. Recover unfinished saves and prepared writes from a bounded local journal; a write completed before a crash is recognized without appending it twice. Uncertain paid requests pause until you explicitly retry.
+- Keep archive identities stable when source files/folders move, and share one identity between automatic and manual Feynman report archiving.
+- Search only the configured **AI Knowledge / AI 知识库** folder. Use question and answer terms, bilingual concepts and local aliases to rank existing topics. Classification still receives only candidate titles/paths, not their bodies.
+- Use clearer knowledge-note headings, skip identical summary text and preserve provenance links. The new consolidation command shows a semantic-edit preview before application. Task history can undo an unchanged archive addition; concurrent or subsequent handwritten edits are protected.
+- Choose a separate classification API model and a daily extra-request limit. Open the archive task panel to see usage, errors, cancellation, save recovery or explicit retry. Counts are request reservations, not provider billing.
+- Choose one of three application difficulties. Completed Feynman learning can create a local 1/3/7/14-day review plan; early practice does not count as delayed retention evidence. A narrow, source-grounded probability check can reject contradictory independence answers.
+- Refresh archive status without rebuilding the whole chat, and improve narrow-panel spacing and task/review controls.
 
-Classification makes an extra request to your configured AI provider and may incur charges. It is a model suggestion and should be reviewed. Requests include up to 8,000 question characters, 24,000 answer characters and 120 candidate names/paths, so long-answer summaries may be partial. Existing answers are not retroactively processed. Disable classification or change its folder in settings; turning off automatic saving stops automatic classification too. The Codex backend retains the documented filesystem-read limitations.
+Classification and explicit consolidation may incur provider charges. Recovery tasks and review plans are unencrypted local plugin data and may sync with your vault. Automatic tasks are cancelled when classification/automatic saving is disabled or the knowledge folder changes. Review plans do not send background AI requests or create system notifications.
 
-Restart Obsidian or reload the plugin after updating. Requires Obsidian 1.13.0 or newer on desktop. For manual installation, copy main.js, manifest.json and styles.css into .obsidian/plugins/current-note-chat/.
+These improvements do not establish real-provider classification accuracy or long-term mastery. Semantic consolidation requires reviewing the preview, and the numeric check is not a general mathematical verifier. See the [implementation record](OPTIMIZATION_PROGRESS.zh-CN.md) for remaining work. Three new synthetic 0.15.0 walkthroughs accompany the earlier version-labelled 0.14.0 images in the [illustrated guide](SCREENSHOTS.md).
 
-Release checks include 93 automated regressions, a three-asset PDF smoke test, Windows/macOS/Linux CI and GitHub artifact attestations. Real-provider classification quality and Obsidian UI behavior still need manual verification.
+Restart Obsidian or reload the plugin after updating. Requires Obsidian 1.13.0 or newer on desktop. Manual installation uses main.js, manifest.json and styles.css in .obsidian/plugins/current-note-chat/.
+
+Local validation passed 114 automated tests, lint/build/release checks and the three-asset PDF installation smoke test. The release workflow runs Windows/macOS/Linux checks and generates GitHub attestations before publishing. Real-provider quality and native Obsidian UI/platform behavior still require manual verification.

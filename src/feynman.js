@@ -1,4 +1,6 @@
 const { L } = require('./i18n');
+const { randomUUID } = require('node:crypto');
+const { validReview, checkIndependence } = require('./learning-review');
 const { SCREEN_CHAT_KEY, MAX_CONTEXT_CHARS } = require('./constants');
 
 const PREFIX = '__feynman__:';
@@ -9,6 +11,7 @@ const LABELS = {
   plainLanguage: ['通俗表达', 'Plain language'], example: ['具体例子与边界', 'Example and limits']
 };
 function learningKey(source) { return PREFIX + source; }
+function lessonReportId(state) { return state.reportId ||= randomUUID(); }
 function phaseLabel(phase) {
   return { explain: L('1/3 用自己的话解释', '1/3 Explain in your own words'), apply: L('2/3 应用与迁移', '2/3 Apply to a new situation'), teachback: L('3/3 再次讲清楚', '3/3 Teach it back'), complete: L('本轮验证通过', 'This round passed') }[phase];
 }
@@ -33,7 +36,8 @@ function buildLearningPrompt(state, answer, action = 'answer') {
     'For action=hint give ONE small hint or guiding question without the full answer or worked solution. For action=answer give concise feedback, identify the most important gap and ask ONE targeted question if improvement is needed. Do not give a full replacement explanation before the learner tries again.',
     'When phase=explain and the required checks pass, provide an applicationChallenge: a new, specific transfer problem supported by the source, with enough information to solve it. Do not reveal its answer. When phase=apply, grade the answer to the exact current challenge and require reasoning. When phase=teachback, require a fresh explanation, new example and limits, not copying earlier feedback or accepted answers. Compare with previousAcceptedAnswers. If any important gap remains, mark the relevant check retry.',
     'Return ONLY a JSON object (no prose outside it). Schema: {"supported":true,"sourceEvidence":"short exact source quote, or visible image detail","feedback":"concise feedback or one hint","gaps":["specific gap"],"checks":{"accuracy":{"result":"pass|retry|unknown","evidence":"exact learner quote or empty","reason":"why"},"reasoning":{"result":"pass|retry|unknown","evidence":"...","reason":"..."},"plainLanguage":{"result":"pass|retry|unknown","evidence":"...","reason":"..."},"example":{"result":"pass|retry|unknown","evidence":"...","reason":"..."}},"applicationChallenge":"new problem only when explanation passes; otherwise empty"}. All fields and all four checks are required for action=answer. For action=hint only supported, sourceEvidence, feedback and gaps are required.',
-    JSON.stringify({ topic: state.topic, phase: state.phase, action, challenge: state.challenge, requiredChecks: requiredCriteria(state.phase), previousGaps: state.gaps, previousAcceptedAnswers: state.evidence.map(item => ({ phase: item.phase, answer: item.answer })), source: state.source, learnerAnswer: answer })
+    'Application difficulty: 1 = direct use in a simple example, 2 = transfer to a new situation with reasoning, 3 = compare a tempting wrong solution or test an applicability boundary. Stay within source-supported facts. Diagnose the specific misconception. Fluent wording never compensates for a wrong conclusion or calculation.',
+    JSON.stringify({ topic: state.topic, phase: state.phase, action, difficulty: state.difficulty || 2, challenge: state.challenge, requiredChecks: requiredCriteria(state.phase), previousGaps: state.gaps, previousAcceptedAnswers: state.evidence.map(item => ({ phase: item.phase, answer: item.answer })), source: state.source, learnerAnswer: answer })
   ].join('\n\n');
 }
 function boundedText(value, limit, name, allowEmpty = false) {
@@ -59,6 +63,11 @@ function parseAssessment(raw, state, answer, action = 'answer') {
     result.checks[name] = { result: check.result === 'pass' && !grounded ? 'unknown' : check.result, evidence, reason };
   }
   result.applicationChallenge = boundedText(data.applicationChallenge, 2000, 'applicationChallenge', true);
+  if (result.supported && checkIndependence(state, answer)?.consistent === false) {
+    const gap = L('独立性的判断与题目给定概率不一致，请重新比较联合概率与两个概率的乘积。', 'The independence conclusion conflicts with the stated probabilities. Compare the joint probability with the product again.');
+    result.checks.accuracy = { result: 'retry', evidence: '', reason: gap }; result.feedback = gap;
+    result.gaps = [gap, ...result.gaps].slice(0, 6);
+  }
   return result;
 }
 function applyAssessment(state, result, answer, action = 'answer') {
@@ -95,6 +104,10 @@ function loadLessons(raw) {
     try {
       if (!key.startsWith(PREFIX) || key.length > 4096 || !item || !PHASES.includes(item.phase)) continue;
       const state = createLesson(boundedText(item.topic, 300, 'topic'));
+      if (typeof item.reportId === 'string' && item.reportId.length <= 128) state.reportId = item.reportId;
+      state.difficulty = [1, 2, 3].includes(item.difficulty) ? item.difficulty : 2;
+      if (validReview(item.review)) state.review = validReview(item.review);
+      if (typeof item.reviewId === 'string' && item.reviewId.length <= 128) state.reviewId = item.reviewId;
       state.phase = item.phase; state.challenge = boundedText(item.challenge, 2000, 'challenge', item.phase === 'complete');
       for (const name of ['revision', 'attempts']) if (Number.isSafeInteger(item[name]) && item[name] >= 0) state[name] = Math.min(item[name], 1000000);
       state.gaps = (Array.isArray(item.gaps) ? item.gaps.slice(0, 6) : []).map(gap => boundedText(gap, 500, 'gap'));
@@ -121,4 +134,4 @@ function serializeLessons(lessons = new Map()) {
   while (lessons.size > 20) lessons.delete(lessons.keys().next().value);
   return Object.fromEntries(loadLessons(Object.fromEntries(lessons)));
 }
-module.exports = { learningKey, phaseLabel, createLesson, buildLearningPrompt, parseAssessment, applyAssessment, formatAssessment, loadLessons, serializeLessons };
+module.exports = { learningKey, phaseLabel, createLesson, lessonReportId, buildLearningPrompt, parseAssessment, applyAssessment, formatAssessment, loadLessons, serializeLessons };

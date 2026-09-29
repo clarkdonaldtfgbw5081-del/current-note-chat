@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.15.0
+
+- Require a saved conversation before automatic classification. Persist bounded recovery tasks, classification plans and write journals; recover completed writes without duplicate appends, and pause uncertain paid requests until explicit retry.
+- Use message-based archive identities across source renames and share the same Feynman report identity for manual/automatic archiving. Migrate existing bindings and update conversation, learning and review sources when folders move.
+- Traverse only the configured knowledge folder. Rank candidates using both question and answer, bilingual concept terms and local aliases; send only candidate titles/paths.
+- Remove repeated concept headings, avoid identical summary text and retain new provenance links. Add explicit knowledge-consolidation previews and safe undo for verified archive additions; preserve concurrent handwritten changes.
+- Add a classification-specific API model, daily extra-request limit, content reuse and an archive task/usage panel with recovery, cancellation and recent undo actions.
+- Add three application difficulties and local 1/3/7/14-day Feynman review plans. Early practice does not advance the schedule. Veto contradictory independence answers only when the source formula and numeric evidence are fully supported.
+- Update archive status without rebuilding chat, add accessible task/review controls and compact narrow-panel spacing. Document remaining real-provider, native UI and learning-quality validation.
+- Pass 114 automated regressions, lint, build/release checks and the three-asset PDF installation smoke test locally; GitHub CI also checks Windows/macOS/Linux before release.
+
 ## 0.14.0
 
 - Add AI classification and knowledge archiving, enabled alongside automatic note saving. Restrict candidate selection and writes to a configurable knowledge folder and its subfolders.

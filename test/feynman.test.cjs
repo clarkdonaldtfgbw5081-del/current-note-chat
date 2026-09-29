@@ -32,7 +32,7 @@ function fixture(context) {
     runTask: (work, signal) => work(signal), readCurrentFile: async () => SOURCE,
     askLearning: async (prompt, image) => { calls.push({ prompt, image }); const data = JSON.parse(prompt.split('\n\n').at(-1)); return JSON.stringify(response(data.learnerAnswer)); },
     saveQAToNote: async (...args) => saved.push(args), exportChatToNote: async (...args) => exported.push(args),
-    saveConversation: async (key, thread, meta) => { if (plugin.settings.noteSaveMode === 'conversation') conversations.push({ key, thread: thread.map(message => ({ ...message })), meta: { ...meta } }); }
+    saveConversation: async (key, thread, meta) => { if (plugin.settings.noteSaveMode === 'conversation') { conversations.push({ key, thread: thread.map(message => ({ ...message })), meta: { ...meta } }); return 'AI Q&A/session.md'; } }
   };
   const widget = new CurrentNoteChatWidget(plugin); plugin.widget = widget; widget.mount();
   context.after(() => widget.unmount());
@@ -174,6 +174,27 @@ test('per-answer learning flags only the completed report for knowledge archivin
   assert.equal(f.saved.length, 3); assert.deepEqual(f.saved.map(args => args[2].archiveReady), [false, false, true]);
   assert.equal(f.saved.at(-1)[2].archiveMessageId, f.thread().at(-2).id);
 });
+
+test('manual and automatic Feynman archiving share a report ID and completion records a local review plan', async context => {
+  const f = fixture(context), archived = []; f.plugin.settings.noteSaveMode = 'conversation';
+  f.plugin.queueKnowledgeArchive = (...args) => archived.push(args);
+  await f.send('Force and acceleration'); await f.send(ANSWER); await f.send(ANSWER); await f.send(ANSWER);
+  f.plugin.knowledgeNotes = { queue: async (...args) => archived.push(args) };
+  await Plugin.prototype.archiveCurrentAnswer.call(f.plugin);
+  assert.equal(archived.length, 2); assert.equal(archived[0][1].id, archived[1][1].id);
+  assert.equal(f.plugin.learningReviews.size, 1); const review = [...f.plugin.learningReviews.values()][0];
+  assert(review.dueAt > review.completedAt); assert.equal(review.delayedPasses, 0);
+  const restored = loadLessons(serializeLessons(f.plugin.learningSessions)).get(learningKey('note.md'));
+  assert.equal(restored.reportId, archived[0][1].id); assert.equal(restored.review.dueAt, review.dueAt);
+});
+
+test('a classification model override affects only the classification request', async () => {
+  const plugin = new Plugin(); plugin.settings = { backend: 'api', classificationModel: 'classification-test' };
+  plugin.getApiConfig = () => ({ backend: 'api', url: 'https://example.invalid/v1/chat/completions', model: 'qa-test', headers: {} });
+  plugin.runTask = (work, signal) => work(signal);
+  await plugin.askClassification('Synthetic classification'); assert.equal(request.model, 'classification-test');
+  await plugin.askLearning('Synthetic learning', null); assert.equal(request.model, 'qa-test');
+});
 test('file rename moves frozen learning progress and cancels only the affected request', async () => {
   const events = new Map(); const plugin = new Plugin();
   plugin.manifest = { dir: 'plugins/current-note-chat' }; plugin.loadData = async () => ({});
@@ -188,4 +209,25 @@ test('file rename moves frozen learning progress and cancels only the affected r
   assert.equal(loadLessons(serializeLessons(plugin.learningSessions)).get(newKey).phase, 'apply');
   plugin.widget.learning.requestKey = newKey; events.get('delete')(new TFile('unrelated.md')); assert.equal(cancelled, 0);
   events.get('delete')(new TFile('renamed.md')); assert.equal(cancelled, 1); assert(!plugin.learningSessions.has(newKey)); assert(!plugin.messagesByNote.has(newKey));
+});
+
+test('folder renames preserve child conversations, learning state and review sources', async () => {
+  const events = new Map(), plugin = new Plugin(); plugin.manifest = { dir: 'plugins/current-note-chat' }; plugin.loadData = async () => ({});
+  for (const name of ['registerView', 'addSettingTab', 'addRibbonIcon', 'addCommand', 'registerEvent']) plugin[name] = () => {};
+  plugin.app = { vault: { adapter: { exists: async () => false }, on: (name, fn) => { events.set(name, fn); } }, workspace: { on: () => {}, onLayoutReady: () => {} } };
+  await plugin.onload(); plugin.queueSaveSessions = () => {};
+  const source = 'Course/note.md', key = learningKey(source), state = lesson(); state.source.path = source;
+  plugin.learningSessions.set(key, state); plugin.messagesByNote.set(source, [{ id: 'one', role: 'user', text: 'Question' }]); plugin.messagesByNote.set(key, []);
+  plugin.conversationNotes.records.set(source, { id: 'binding', path: 'AI Q&A/note.md' });
+  plugin.learningReviews.set('review', { source }); events.get('rename')({ path: 'RenamedCourse' }, 'Course');
+  assert(plugin.messagesByNote.has('RenamedCourse/note.md')); assert(plugin.learningSessions.has(learningKey('RenamedCourse/note.md')));
+  assert.equal(state.source.path, 'RenamedCourse/note.md'); assert(plugin.conversationNotes.records.has('RenamedCourse/note.md'));
+  assert.equal(plugin.learningReviews.get('review').source, 'RenamedCourse/note.md');
+});
+
+test('completed learning with failed transcript saving never starts classification', async context => {
+  const f = fixture(context), archived = []; f.plugin.settings.noteSaveMode = 'conversation'; f.plugin.saveConversation = async () => null;
+  f.plugin.queueKnowledgeArchive = (...args) => archived.push(args);
+  await f.send('Force and acceleration'); await f.send(ANSWER); await f.send(ANSWER); await f.send(ANSWER);
+  assert.equal(f.state().phase, 'complete'); assert.equal(archived.length, 0);
 });

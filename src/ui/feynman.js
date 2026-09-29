@@ -1,13 +1,14 @@
 const { Notice } = require('obsidian');
 const { L } = require('../i18n');
 const { SCREEN_CHAT_KEY, MAX_QUESTION_CHARS } = require('../constants');
-const { learningKey, phaseLabel, createLesson, buildLearningPrompt, parseAssessment, applyAssessment, formatAssessment } = require('../feynman');
+const { learningKey, phaseLabel, createLesson, lessonReportId, buildLearningPrompt, parseAssessment, applyAssessment, formatAssessment } = require('../feynman');
 const { newMessage, touchSession } = require('../sessions');
 const { selectRelevantContext } = require('../retrieval');
 const { throwIfAborted, withAbort, abortError } = require('../tasks');
 const { previewScreenshot } = require('./screenshot-preview');
 const { noteSaveMode } = require('../conversation-notes');
 const { buttonContent } = require('./elements');
+const { completeReview } = require('../learning-review');
 
 class FeynmanLearning {
   constructor(widget) { this.widget = widget; this.plugin = widget.plugin; }
@@ -31,6 +32,8 @@ class FeynmanLearning {
     this.hintButton.addEventListener('click', () => void this.send(null, 'hint'));
     this.reviewButton = actions.createEl('button', { text: L('开始复习', 'Start review') });
     this.reviewButton.addEventListener('click', () => this.review());
+    const planButton = actions.createEl('button', { text: L('复习计划', 'Review plan') });
+    planButton.addEventListener('click', () => { const { ReviewPlanModal } = require('./review-plan'); new ReviewPlanModal(this.plugin).open(); });
   }
   setEnabled(enabled) {
     if (this.widget.busy || this.widget.unmounted || !this.widget.inputEl) return;
@@ -59,6 +62,7 @@ class FeynmanLearning {
     widget.editButton.disabled = true;
     this.hintButton.disabled = widget.busy || !state || state.phase === 'complete';
     this.reviewButton.disabled = widget.busy || state?.phase !== 'complete';
+    if (state?.phase === 'complete' && state.review && this.plugin.settings.learningReviewEnabled !== false) this.detailEl.setText(`${L('下次脱离资料复习', 'Next review without the source')}: ${new Date(state.review.dueAt).toLocaleDateString()}\n${L('已完成的延迟复习', 'Delayed review rounds passed')}: ${state.review.delayedPasses || 0}`);
   }
   canRetry(id) {
     const state = this.state();
@@ -68,6 +72,9 @@ class FeynmanLearning {
     if (this.widget.busy || !this.state() || this.state().phase !== 'complete') return;
     const previous = this.state(); const state = createLesson(previous.topic);
     state.source = previous.source;
+    state.difficulty = this.plugin.settings.learningDifficulty || 2;
+    state.review = previous.review;
+    state.reviewId = previous.reviewId || lessonReportId(previous);
     state.revision = previous.revision + 1;
     this.plugin.learningSessions.set(this.key(), state);
     const thread = this.plugin.messagesByNote.get(this.key()) || [];
@@ -129,6 +136,7 @@ class FeynmanLearning {
     if (!retryId) { thread.push(user); if (action !== 'hint') widget.inputEl.value = ''; }
     if (!state) {
       state = createLesson(answer); this.plugin.learningSessions.set(key, state);
+      state.difficulty = this.plugin.settings.learningDifficulty || 2;
       thread.push(newMessage('assistant', `**${state.topic} · ${phaseLabel(state.phase)}**\n\n${state.challenge}`, { replyTo: user.id }));
       touchSession(this.plugin.messagesByNote, key, thread);
       await this.saveTranscript(key, thread, state);
@@ -152,6 +160,17 @@ class FeynmanLearning {
       throwIfAborted(signal); if (widget.unmounted || this.plugin.learningSessions.get(key) !== state) return;
       const result = parseAssessment(raw, state, answer, action);
       const transition = applyAssessment(state, result, answer, action);
+      if (transition.state.phase === 'complete') transition.state.reportId = user.id;
+      if (transition.state.phase === 'complete' && this.plugin.settings.learningReviewEnabled !== false) {
+        this.plugin.learningReviews ||= new Map();
+        const sameTopic = [...this.plugin.learningReviews.values()].find(item => item.topic === state.topic && item.source === this.sourceKey());
+        transition.state.review = completeReview(state.review || sameTopic);
+        const reviewId = transition.state.reviewId || sameTopic?.id || user.id;
+        transition.state.reviewId = reviewId;
+        this.plugin.learningReviews.delete(reviewId);
+        this.plugin.learningReviews.set(reviewId, { id: reviewId, topic: state.topic, source: this.sourceKey(), ...transition.state.review, attempts: transition.state.attempts, gaps: [...transition.state.gaps] });
+        while (this.plugin.learningReviews.size > 100) this.plugin.learningReviews.delete(this.plugin.learningReviews.keys().next().value);
+      }
       reply.text = formatAssessment(state, transition, result, action); reply.streaming = false;
       this.plugin.learningSessions.delete(key); this.plugin.learningSessions.set(key, transition.state);
       if (noteSaveMode(this.plugin.settings) === 'answer') {
@@ -162,8 +181,9 @@ class FeynmanLearning {
       if (!widget.unmounted) { reply.streaming = false; reply.error = true; reply.text = `${L('学习反馈未完成', 'Learning feedback incomplete')}: ${error.message || error}`; }
     } finally {
       const savedState = this.plugin.learningSessions.get(key);
-      if (!widget.unmounted && this.plugin.messagesByNote.get(key) === thread && savedState) await this.saveTranscript(key, thread, savedState);
-      if (!widget.unmounted && savedState?.phase === 'complete' && !reply.error && !reply.streaming && noteSaveMode(this.plugin.settings) === 'conversation') void this.plugin.queueKnowledgeArchive?.(key, { id: user.id, text: savedState.topic }, { text: this.report(savedState) }, { activity: 'feynman', topic: savedState.topic, source: savedState.source?.path });
+      const transcriptPath = !widget.unmounted && this.plugin.messagesByNote.get(key) === thread && savedState ? await this.saveTranscript(key, thread, savedState) : null;
+      if (transcriptPath && !widget.unmounted && savedState?.phase === 'complete' && !reply.error && !reply.streaming && noteSaveMode(this.plugin.settings) === 'conversation') void this.plugin.queueKnowledgeArchive?.(key, { id: lessonReportId(savedState), text: savedState.topic }, { text: this.report(savedState) }, { activity: 'feynman', transcriptPath, topic: savedState.topic, source: savedState.source?.path });
+      else if (!transcriptPath && !widget.unmounted && savedState?.phase === 'complete' && !reply.error && !reply.streaming && noteSaveMode(this.plugin.settings) === 'conversation') this.plugin.knowledgeNotes?.deferTranscript(key, { id: lessonReportId(savedState), text: savedState.topic }, { text: this.report(savedState) }, { activity: 'feynman', topic: savedState.topic, source: savedState.source?.path });
       widget.busy = false; this.requestKey = null; widget.requestController = null;
       if (!widget.unmounted) { this.plugin.queueSaveSessions(); widget.refresh(); }
     }

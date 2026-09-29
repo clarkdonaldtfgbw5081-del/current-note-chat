@@ -6,9 +6,9 @@ An Obsidian desktop plugin for asking AI about your screen or the current file, 
 
 The plugin is free and open source. AI providers may require their own account, API key or subscription and charge for requests. Supported remote services are OpenAI, DeepSeek, the service used by your signed-in Codex CLI and any compatible endpoint you configure. The plugin has no analytics or advertising.
 
-![Q&A and automatic knowledge archiving](docs/images/guide-qa-0.14.0.jpg)
+![Knowledge note with source links](docs/images/guide-knowledge-0.15.0.jpg)
 
-*Browser walkthrough using the 0.14.0 UI code and synthetic content. The actual panel follows your Obsidian theme; controls support Chinese and English. [See the three illustrated workflows](docs/SCREENSHOTS.md).*
+*Browser walkthrough using the 0.15.0 UI/writer code and synthetic content. The actual panel follows your Obsidian theme; controls support Chinese and English. [See six version-labelled workflow images](docs/SCREENSHOTS.md), including archive recovery and review plans.*
 
 **Privacy:** Screen Q&A captures the selected display, including other application windows. A preview is shown before sending by default. The question, recent conversation and screenshot or selected file excerpts are sent to your configured provider. API keys use Obsidian SecretStorage. Chat histories and exported notes are local vault data that may be copied by vault sync. See [SECURITY.md](SECURITY.md) for storage, cancellation and Codex details.
 
@@ -91,13 +91,25 @@ Choose a vault folder in **Conversation notes folder**, defaulting to **AI Q&A**
 
 **AI classification and archiving** is enabled by default when automatic note saving is enabled. After a complete Q&A answer is saved, a background request to the configured provider summarizes it and chooses a knowledge note. Feynman rounds archive their report only after completion; hints and unfinished assessments remain in the conversation.
 
-The default knowledge folder is **AI Knowledge** (**AI 知识库** in a Chinese interface). Classification considers only Markdown titles and paths within this folder and its subfolders, excluding the current source, transcript and Inbox. It sends no existing candidate note contents. This version enumerates Markdown paths locally before filtering the knowledge folder; paths outside that folder are excluded from the classification request. A clearly matching concept receives an appended section; otherwise the plugin creates a topic note inside one to three category folders. Handwritten content stays intact and archived sections link to their full conversation and source when available.
+The default knowledge folder is **AI Knowledge** (**AI 知识库** in a Chinese interface). Retrieval traverses only this folder and its subfolders, using question/answer keywords, bilingual synonyms and local aliases. Only candidate titles and paths are sent for classification; aliases and candidate contents stay local. The current source, transcript and Inbox are excluded. A clearly matching concept receives an appended section; otherwise the plugin creates a topic note inside one to three category folders. Handwritten content stays intact and archived sections link to their full conversation and source when available.
 
 For example, a probability answer may go to AI Knowledge/Mathematics/Probability/Independence.md. This is an illustration: category names and classification depend on the model. Classification is a suggestion, not a verified fact. Low-confidence results go to **Inbox**. If classification fails or returns an unsafe destination, Inbox retains the original answer for review. Stopped and failed Q&A answers are not classified.
 
 The extra request can incur provider charges. It sends up to 8,000 question characters, 24,000 answer characters and 120 candidate names/paths; long answers may therefore produce a partial summary, while the full conversation remains available. There is no full-vault content indexing. Change **Knowledge notes folder**, disable **AI classification and archiving**, or use the command **Archive current answer to a knowledge note** to archive a completed answer manually. Turning off automatic note saving also stops automatic classification. Cancelled jobs stay cancelled even if settings are quickly re-enabled. Previously saved answers are not retroactively classified.
 
 ## Data and limits
+
+### Recovery, consolidation and review plans in 0.15.0
+
+Conversation saving must succeed before automatic classification. Failed saving retains a recovery task. The local journal stores classification results and prepared writes, allowing completed classifications to resume without another provider request. Uncertain in-flight requests pause for an explicit retry. Up to 20 jobs retain answers of up to 64,000 characters; disabling archiving/automatic saving or changing the knowledge folder cancels old jobs. Source renames and automatic/manual Feynman archiving share stable identities within the 400-record archive history.
+
+Use **View archive tasks and usage** to inspect failures, retry, dismiss tasks or undo recent unchanged additions. Edited or shifted sections cannot be safely undone. **Classification model** can select a text model from the same API provider; Codex keeps its own configuration. **Daily classification request limit** counts reservations, failed and interrupted attempts, not monetary billing, and does not limit ordinary Q&A. Recent identical content reuses archived results. Status updates affect only the archive row instead of rerendering the entire conversation.
+
+Automatic appends skip identical summary text and retain new source links. For semantic consolidation, open a knowledge note and use **Consolidate current knowledge note (preview)**. This explicitly sends the current note or selection to the Q&A model and requires applying a preview; handwritten notes are never automatically rewritten. Select a passage for notes longer than 12,000 characters.
+
+Feynman completion records local **1, 3, 7 and 14 day** review plans, retaining up to 100 topics. Early practice does not advance the interval or count as delayed retention evidence. Plans send no background requests or system notifications. Select **Review plan** or **View knowledge review plan**, put the material aside and start a new round. Three application difficulty levels request direct use, transfer or counterexamples. A limited source-grounded numerical check can veto inconsistent independence conclusions for fully specified probability exercises; it is not a general mathematical verifier. Provider classification quality and lasting learning outcomes still require separate evaluation.
+
+Implementation evidence and remaining work are listed in the [Chinese progress report](docs/OPTIMIZATION_PROGRESS.zh-CN.md).
 
 - New history is stored in plugin `data.json` via Obsidian `loadData`/`saveData`, alongside settings. Secret names are stored, not API secret values.
 - Learning progress retains up to twenty recent sources, including topics, gaps, accepted answers and frozen file excerpts, but no images. Learning transcripts share the overall forty-conversation/eighty-message limits.

@@ -22,6 +22,10 @@ export interface PluginSettings {
   qaFolder: string;
   autoClassify: boolean;
   knowledgeFolder: string;
+  classificationModel: string;
+  classificationDailyLimit: number;
+  learningDifficulty: number;
+  learningReviewEnabled: boolean;
   showLauncher: boolean;
   screenshotMaxEdge: number;
   screenFollowCursor: boolean;
@@ -57,6 +61,10 @@ export type LearningPhase = 'explain' | 'apply' | 'teachback' | 'complete';
 export type LearningCriterion = 'accuracy' | 'reasoning' | 'plainLanguage' | 'example';
 export interface LearningCheck { result: 'pass' | 'retry' | 'unknown'; evidence: string; reason: string; }
 export interface LearningState {
+  reportId?: string;
+  reviewId?: string;
+  difficulty?: number;
+  review?: { completedAt: number; dueAt: number; streak: number; delayedPasses: number };
   topic: string;
   phase: LearningPhase;
   challenge: string;

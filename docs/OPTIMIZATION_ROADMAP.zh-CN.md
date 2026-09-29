@@ -1,5 +1,7 @@
 # 深入优化清单：0.14.0
 
+这是 0.14.0 的历史复查记录。0.15.0 已完成其中的可靠性修复，并加入知识整理预览、复习计划、费用控制与任务界面；逐项实现情况和仍待验证的工作见[优化实施记录](OPTIMIZATION_PROGRESS.zh-CN.md)。下文中的“当前”指复查时的 0.14.0。
+
 复查日期：2026-09-29。依据为当前源码、内存模拟验证、GitHub 检查结果与社区审核页面。以下是待实施方案，当前版本未修复这些新发现的问题；真实 AI 分类准确率和 Obsidian 实机表现仍需单独验证。
 
 发布已完成：[GitHub 0.14.0](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/0.14.0)公开；[插件市场页面](https://community.obsidian.md/plugins/current-note-chat)提供安装入口，0.14.0 自动检查为 Completed。发布检查通过与产品体验可以继续改善是两件独立的事。
