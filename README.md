@@ -6,6 +6,10 @@ An Obsidian desktop plugin for asking AI about your screen or the current file, 
 
 The plugin is free and open source. AI providers may require their own account, API key or subscription and charge for requests. Supported remote services are OpenAI, DeepSeek, the service used by your signed-in Codex CLI and any compatible endpoint you configure. The plugin has no analytics or advertising.
 
+[Watch the 0.16.0 video (45 seconds)](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/download/0.16.0/Screen-and-File-QA-0.16.0-45s.mp4) · [Storyboard and editable source](docs/media/promo-0.16.0/README.zh-CN.md)
+
+*1080p · Chinese captions · no audio. Illustrated workflow with simulated content, not native Obsidian recordings. Covers queued questions, source-note appends, screenshot attachments, topic archiving, Feynman learning and reviews.*
+
 ![Knowledge note with source links](docs/images/guide-knowledge-0.15.0.jpg)
 
 *Browser walkthrough using the 0.15.0 UI/writer code and synthetic content. The actual panel follows your Obsidian theme; controls support Chinese and English. [See six version-labelled workflow images](docs/SCREENSHOTS.md), including archive recovery and review plans.*
