@@ -27,6 +27,7 @@ export interface PluginSettings {
   answerDepth: boolean;
   answerExamples: boolean;
   profileWizardDone: boolean;
+  memoryRecallEnabled: boolean;
   autoClassify: boolean;
   knowledgeFolder: string;
   classificationModel: string;

@@ -7,6 +7,12 @@ const MAX_FILE_BYTES = 25 * 1024 * 1024;
 const MAX_SESSION_MESSAGES = 80;
 const MAX_SESSION_KEYS = 40;
 const MAX_QUEUE = 5;
+const MEMORY_MAX_ENTRIES = 3;
+const MEMORY_MAX_CHARS = 1200;
+const MEMORY_HITS_CAP = 400;
+const MEMORY_NOTE_READS = 8;
+const MEMORY_NOTE_CHARS = 4000;
+const MEMORY_SNIPPET_CHARS = 500;
 const TEXT_EXTENSIONS = /* @__PURE__ */ new Set(["md", "txt", "csv", "json", "html", "htm", "xml", "yaml", "yml"]);
 const SUPPORTED_EXTENSIONS = /* @__PURE__ */ new Set([...TEXT_EXTENSIONS, "pdf", "doc", "docx"]);
 const DEFAULT_SETTINGS = {
@@ -33,6 +39,7 @@ const DEFAULT_SETTINGS = {
   answerDepth: false,
   answerExamples: false,
   profileWizardDone: false,
+  memoryRecallEnabled: true,
   autoClassify: true,
   knowledgeFolder: "",
   classificationModel: '',
@@ -48,4 +55,4 @@ const DEFAULT_SETTINGS = {
   codexIgnoreUserConfig: true
 };
 
-module.exports = { VIEW_TYPE, SCREEN_CHAT_KEY, MAX_CONTEXT_CHARS, MAX_QUESTION_CHARS, MAX_EDIT_CHARS, MAX_FILE_BYTES, MAX_SESSION_MESSAGES, MAX_SESSION_KEYS, MAX_QUEUE, TEXT_EXTENSIONS, SUPPORTED_EXTENSIONS, DEFAULT_SETTINGS };
+module.exports = { VIEW_TYPE, SCREEN_CHAT_KEY, MAX_CONTEXT_CHARS, MAX_QUESTION_CHARS, MAX_EDIT_CHARS, MAX_FILE_BYTES, MAX_SESSION_MESSAGES, MAX_SESSION_KEYS, MAX_QUEUE, MEMORY_MAX_ENTRIES, MEMORY_MAX_CHARS, MEMORY_HITS_CAP, MEMORY_NOTE_READS, MEMORY_NOTE_CHARS, MEMORY_SNIPPET_CHARS, TEXT_EXTENSIONS, SUPPORTED_EXTENSIONS, DEFAULT_SETTINGS };

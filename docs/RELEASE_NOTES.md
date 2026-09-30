@@ -1,4 +1,13 @@
+# Screen and File QA 1.2.0
+
+Every question now carries your past learning with it — locally.
+
+- Before each ordinary screen/file question, the plugin recalls up to three related snippets from your knowledge notes and earlier questions across all conversations and adds them as labeled background; the attached file or screenshot remains the authoritative source.
+- Recalled entries that contribute to a successful answer are reinforced (bounded hit counts in plugin data) and rank higher later — memories strengthen instead of being overwritten.
+- Fully local: no service, no extra provider requests, no new dependencies. Recalled snippets are sent to your provider as part of the question prompt; toggle "Cross-conversation memory recall" in settings (on by default). Feynman learning, note revision and classification are unchanged.
+
 # Screen and File QA 1.1.0
+
 
 A 30-second learner profile makes every ordinary answer fit you — and go deeper.
 

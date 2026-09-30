@@ -1,6 +1,13 @@
 # Changelog
 
+## 1.2.0
+
+- Add cross-conversation memory recall, inspired by agent-memory designs (retain/recall/reinforce) but fully local: before each ordinary question the plugin recalls up to three related snippets from knowledge-folder notes (including aliases) and past questions across all conversations, and injects them as clearly-labeled background — the current file or screenshot stays authoritative for factual answers.
+- Reinforce instead of overwrite: recalled entries that contributed to a successful answer gain a bounded hit count that boosts future recall ranking; up to 400 keys are kept in plugin data.
+- Everything runs locally with no extra requests or new dependencies; recalled content is sent to the AI provider as part of the question prompt. Toggle under settings ("Cross-conversation memory recall", on by default); Feynman learning, note revision and classification are unaffected, and an empty memory behaves exactly like before.
+
 ## 1.1.0
+
 
 - Add a learner profile: on first panel open a 30-second wizard asks for the learner's level, preferred answer style and optional background. Ordinary Q&A (screen and file) then tailors explanations to that profile — the direct answer still comes first.
 - Add "explain principles in depth": after the direct answer, the reasoning behind the result is laid out step by step so follow-up questions are unnecessary.
