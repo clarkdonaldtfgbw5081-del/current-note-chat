@@ -544,3 +544,25 @@
 .current-note-chat__queue-icon .svg-icon { width: 13px; height: 13px; }
 .current-note-chat__queue-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .current-note-chat__queue-remove { flex: none; }
+
+.current-note-chat-wizard { width: min(560px, calc(100vw - 48px)); }
+.current-note-chat-wizard .modal-content { max-height: 72vh; overflow-y: auto; }
+.current-note-chat-wizard__field { margin: 14px 0; }
+.current-note-chat-wizard__label { font-weight: 600; margin-bottom: 8px; color: var(--text-normal); }
+.current-note-chat-wizard__options { display: flex; flex-direction: column; gap: 8px; }
+.current-note-chat-wizard__option {
+  text-align: left;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  cursor: pointer;
+}
+.current-note-chat-wizard__option:hover { border-color: var(--interactive-accent); }
+.current-note-chat-wizard__option[aria-checked="true"] {
+  border-color: var(--interactive-accent);
+  background: hsla(var(--interactive-accent-hsl), 0.12);
+  font-weight: 600;
+}
+.current-note-chat-wizard__background { width: 100%; min-height: 56px; resize: vertical; }
+.current-note-chat-wizard__actions { display: flex; gap: 10px; margin-top: 18px; }

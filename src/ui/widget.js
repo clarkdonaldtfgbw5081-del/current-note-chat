@@ -100,7 +100,14 @@ class CurrentNoteChatWidget {
     if (this.unmounted) return;
     this.isOpen = open;
     this.rootEl.toggleClass('is-open', open); this.launcherEl.setAttribute('aria-expanded', String(open));
-    if (open) { this.refresh(); this.inputEl.focus(); }
+    if (open) {
+      this.refresh(); this.inputEl.focus();
+      if (!this.plugin.settings.profileWizardDone && !this._wizardShown) {
+        this._wizardShown = true;
+        const { ProfileWizardModal } = require('./profile-wizard');
+        new ProfileWizardModal(this.plugin).open();
+      }
+    }
     else if (this.plugin.settings.showLauncher !== false) this.launcherEl.focus();
   }
   getChatKey() { return this.learning.enabled ? this.learning.key() : this.plugin.settings.contextMode === 'screen' ? SCREEN_CHAT_KEY : this.plugin.activeFile?.path; }

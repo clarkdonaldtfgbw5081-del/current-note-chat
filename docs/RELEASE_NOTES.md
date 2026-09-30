@@ -1,3 +1,12 @@
+# Screen and File QA 1.1.0
+
+A 30-second learner profile makes every ordinary answer fit you — and go deeper.
+
+- On first panel open, a short wizard asks for your level (beginner / intermediate / advanced), your preferred answer style, and optional background notes. Ordinary screen and file Q&A then tailors wording and depth to that profile; the direct answer still comes first.
+- Choose "explain the principle": after the direct answer, the reasoning is laid out step by step, so the real mechanism is clear without follow-up questions.
+- Choose "worked examples": answers end with 2-3 examples of increasing difficulty on the same knowledge point, each with a brief solution. Examples beyond the source are clearly marked; factual answers remain source-grounded.
+- Everything stays editable in settings → Learner profile. Skipping the wizard (or leaving the level unset) keeps the previous concise behavior. Feynman learning and note revision are unaffected. Profile content is sent to the AI provider with each question.
+
 # Screen and File QA 1.0.2
 
 Knowledge notes now include the exact text of the archived question before the AI summary. Distinct follow-up questions remain visible even when their summaries are identical. Feynman archives label their prompt as a learning topic. Existing archived notes are preserved; this change applies to new archive entries.

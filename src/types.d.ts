@@ -22,6 +22,11 @@ export interface PluginSettings {
   qaFolder: string;
   qaAppendSource: boolean;
   qaAppendAnswer: boolean;
+  learnerLevel: '';
+  learnerBackground: string;
+  answerDepth: boolean;
+  answerExamples: boolean;
+  profileWizardDone: boolean;
   autoClassify: boolean;
   knowledgeFolder: string;
   classificationModel: string;

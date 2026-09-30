@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0
+
+- Add a learner profile: on first panel open a 30-second wizard asks for the learner's level, preferred answer style and optional background. Ordinary Q&A (screen and file) then tailors explanations to that profile — the direct answer still comes first.
+- Add "explain principles in depth": after the direct answer, the reasoning behind the result is laid out step by step so follow-up questions are unnecessary.
+- Add "worked examples": answers can end with 2-3 examples of increasing difficulty on the same knowledge point, each with a brief solution; examples beyond the source are clearly marked and factual answers remain source-grounded.
+- Everything is editable later in settings (Learner profile section, including a wizard button). Skipping the wizard or leaving the level unset keeps the historical concise behavior. Feynman learning and note revision are unaffected.
+
 ## 1.0.1
 
 - Explain question write-back skips instead of failing silently: when a finished question is not appended to a note, a notice states whether the asked file is not Markdown or no Markdown note was open when asking a screen question.

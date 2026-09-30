@@ -74,6 +74,7 @@ Community review may flag filesystem access and child processes used by the opti
 
 - **Screen Q&A:** capture the Obsidian display or the display under the cursor; review the screenshot before sending. A missing display match produces an error instead of capturing a different monitor.
 - **File Q&A:** read Markdown, PDF, DOC/DOCX and text files including CSV, JSON, HTML, XML and YAML. Long documents use relevant excerpts; PDF excerpts retain page labels.
+- **Learner profile:** a 30-second first-run wizard asks for your level, answer style and optional background. Ordinary Q&A then explains principles step by step after the direct answer and can end with 2-3 worked examples for transfer; everything is editable in settings, and unset profiles keep the original concise behavior.
 - **Feynman learning:** choose one concept, explain it in plain language, solve a transfer problem and teach it back. Identify gaps, request small hints, restore progress, export a report and start a review round.
 - **Revise note:** generate a revision of the active Markdown note or selected text, edit it in a side-by-side preview, then apply. Changes made after the preview block applying it. Editor changes support undo.
 - **Stop and retry:** stop pending work and retry the specific failed question. Recent in-memory snapshots reuse the original context or screenshot; older retries explicitly read fresh context.
@@ -170,6 +171,7 @@ Feynman completion records local **1, 3, 7 and 14 day** review plans, retaining 
 
 See the [1.0.0 flow audit](docs/FLOW_AUDIT_1.0.0.zh-CN.md) and the [Chinese implementation report](docs/OPTIMIZATION_PROGRESS.zh-CN.md) for validation and remaining work.
 
+- Learner profile answers (level, style, optional background of up to 200 characters) are stored in plugin data and sent to the selected AI provider as part of each question prompt. Deeper answers and examples increase token usage.
 - New history is stored in plugin `data.json` via Obsidian `loadData`/`saveData`, alongside settings. Secret names are stored, not API secret values.
 - Appending to the asked note modifies that note with a question callout (optionally followed by the answer) and stores screenshot attachments using Obsidian's attachment settings. Appended question IDs are kept in plugin data so a retried answer never appends twice. Notes inside AI Q&A and knowledge folders are never modified, and non-Markdown targets are skipped.
 - Learning progress retains up to twenty recent sources, including topics, gaps, accepted answers and frozen file excerpts, but no images. Learning transcripts share the overall forty-conversation/eighty-message limits.
