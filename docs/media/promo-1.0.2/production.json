@@ -1,0 +1,22 @@
+{
+  "title": "提问，也要留在知识笔记里",
+  "plugin_version": "1.0.2",
+  "date": "2026-09-30",
+  "video": {
+    "file": "Screen-and-File-QA-1.0.2-45s.mp4",
+    "bytes": 1732565,
+    "sha256": "dcceb713b8c2161301c97d26c773fc6618868d6132e860fc13b17cd33f05e7c0",
+    "container": "MP4",
+    "audio_tracks": 0,
+    "major_brand": "isom",
+    "width": 1920.0,
+    "height": 1080.0,
+    "codec": "avc1",
+    "duration_seconds": 45.0,
+    "video_frames": 1350,
+    "average_fps": 30.0,
+    "timebase": 15360
+  },
+  "visuals": "Locally rendered 1.0.2 feature illustrations with fictional questions and simplified UI; not native Obsidian recordings.",
+  "sound": "No voice-over or background music."
+}

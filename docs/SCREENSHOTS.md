@@ -1,5 +1,7 @@
 # 1.0.0: the learning flow in eight illustrations
 
+[See the 1.0.2 video and six updated illustrations: question, summary and source in knowledge notes →](media/promo-1.0.2/README.zh-CN.md)
+
 [Quick start](QUICKSTART.md) · [Project home](../README.md) · [中文说明](SCREENSHOTS.zh-CN.md)
 
 The frames use fictional probability examples and rendered feature illustrations, not native Obsidian screenshots. Descriptions match the first-release behavior; the actual appearance follows the Obsidian theme. Click images for full size.

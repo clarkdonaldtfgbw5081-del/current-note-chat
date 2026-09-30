@@ -6,9 +6,21 @@ An Obsidian desktop plugin for asking AI about your screen or the current file, 
 
 The plugin is free and open source. AI providers may require their own account, API key or subscription and charge for requests. Supported remote services are OpenAI, DeepSeek, the service used by your signed-in Codex CLI and any compatible endpoint you configure. The plugin has no analytics or advertising.
 
-[Watch the 1.0.0 video (45 seconds)](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/download/1.0.0/Screen-and-File-QA-1.0.0-45s.mp4) · [Storyboard and editable source](docs/media/promo-1.0.0/README.zh-CN.md)
+[Watch the 1.0.2 video (45 seconds)](docs/media/promo-1.0.2/Screen-and-File-QA-1.0.2-45s.mp4) · [Six updated illustrations and editable source](docs/media/promo-1.0.2/README.zh-CN.md) · [1.0.2 release](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/1.0.2)
 
-*1080p · Chinese captions · no audio. Illustrated workflow with simulated content, not native Obsidian recordings. Covers queued questions, source-note appends, screenshot attachments, topic archiving, Feynman learning and reviews.*
+*1080p · Chinese captions · no audio. Illustrated workflow with fictional content, not native Obsidian recordings. Shows how the original typed question, AI summary and source links appear together in a new knowledge note.*
+
+## 1.0.2: from question to knowledge note
+
+Each conversation updates one note by default. You can also write the question back to its source note. When a completed answer is archived, the **new topic entry includes the original typed question, AI summary and source links**. A later follow-up question remains visible even when its summary already exists.
+
+![Question and answer written back to the source note; illustrated UI](docs/media/promo-1.0.2/stills/03-source.png)
+
+![Original question, summary and source links in a knowledge note; illustrated UI](docs/media/promo-1.0.2/stills/04-knowledge.png)
+
+![A follow-up question retained with a matching summary; illustrated UI](docs/media/promo-1.0.2/stills/05-followup.png)
+
+Earlier archives are preserved. Screen questions retain the text you typed; the plugin does not reconstruct the full problem statement from a screenshot. [See all six updated illustrations →](docs/media/promo-1.0.2/README.zh-CN.md)
 
 ## Illustrated walkthrough
 
@@ -36,7 +48,7 @@ Append questions, optional answers and transcript links to the asked Markdown no
 
 ### 4. Organize answers by topic
 
-Find topics only within the configured knowledge directory, preserve handwritten content and provenance, and put uncertain matches in Inbox. Classification may add AI usage.
+Find topics only within the configured knowledge directory, preserve handwritten content and provenance, and put uncertain matches in Inbox. New archives since 1.0.2 also include the original typed question. Classification may add AI usage.
 
 ![Organize answers by topic](docs/images/first-release-05-knowledge.png)
 
@@ -78,7 +90,7 @@ Community review may flag filesystem access and child processes used by the opti
 
 Requires Obsidian **1.13.0 or newer** on desktop. Mobile is not supported.
 
-Open **Settings → Community plugins → Browse**, search for **Screen and File QA**, install it and enable it. Alternatively, select **Add to Obsidian** on the [official plugin page](https://community.obsidian.md/plugins/current-note-chat). [GitHub 1.0.0 first release](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/1.0.0) provides manual installation assets. The community directory may synchronize later; check its displayed version before installation.
+Open **Settings → Community plugins → Browse**, search for **Screen and File QA**, install it and enable it. Alternatively, select **Add to Obsidian** on the [official plugin page](https://community.obsidian.md/plugins/current-note-chat). [GitHub 1.0.2 release](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/1.0.2) provides manual installation assets. The community directory may synchronize later; check its displayed version before installation.
 
 For manual installation, extract the **plugin ZIP** from a release into your vault's configuration directory under `plugins/current-note-chat/`. The default configuration directory is `.obsidian`; it can be customized.
 

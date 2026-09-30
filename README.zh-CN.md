@@ -6,9 +6,21 @@
 
 插件免费开源。AI 服务可能需要独立账号、API 密钥或订阅，并按请求收费。支持 OpenAI、DeepSeek、已登录 Codex CLI 使用的服务及你填写的兼容接口。插件不包含统计追踪或广告。
 
-[观看 1.0.0 首发宣传片（45 秒）](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/download/1.0.0/Screen-and-File-QA-1.0.0-45s.mp4) · [分镜与可编辑工程](docs/media/promo-1.0.0/README.zh-CN.md)
+[观看 1.0.2 宣传片（45 秒）](docs/media/promo-1.0.2/Screen-and-File-QA-1.0.2-45s.mp4) · [六张新版功能图与制作说明](docs/media/promo-1.0.2/README.zh-CN.md) · [1.0.2 发布页](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/1.0.2)
 
-*1080p · 中文字幕 · 无音轨。基于首发功能绘制的示意画面，使用模拟内容，非实机录屏；展示连续提问、原笔记写回、截图附件、主题归档、费曼学习与复习。*
+*1080p · 中文字幕 · 无音轨。使用虚构内容绘制的功能示意，非实机录屏；展示原始文字提问、AI 摘要和来源如何共同进入知识笔记。*
+
+## 1.0.2：从提问到知识笔记
+
+对话默认自动保存到同一篇笔记；按需把提问写回原笔记；归档到「AI 知识库」时，**新生成的主题笔记会保留原始文字提问、AI 摘要和来源链接**。即使两次摘要相同，后一次提问也会留下。
+
+![1.0.2：问题与回答写回原笔记的示意](docs/media/promo-1.0.2/stills/03-source.png)
+
+![1.0.2：知识笔记显示原始提问、摘要和来源的示意](docs/media/promo-1.0.2/stills/04-knowledge.png)
+
+![1.0.2：同主题追问仍被保留的示意](docs/media/promo-1.0.2/stills/05-followup.png)
+
+旧归档保持原样；屏幕问题只记录输入的文字，不会从截图重建完整题干。[查看六张新版功能图与说明 →](docs/media/promo-1.0.2/README.zh-CN.md)
 
 ## 图文了解
 
@@ -36,7 +48,7 @@
 
 ### 4. 按主题归入知识库
 
-AI 只在指定知识目录内寻找主题笔记，保留手写内容和来源链接；低置信度结果进入待整理。分类可能增加 AI 用量。
+AI 只在指定知识目录内寻找主题笔记，保留手写内容和来源链接；低置信度结果进入待整理。1.0.2 起新归档还会保留原始文字提问。分类可能增加 AI 用量。
 
 ![按主题归入知识库](docs/images/first-release-05-knowledge.png)
 
@@ -77,7 +89,7 @@ AI 只在指定知识目录内寻找主题笔记，保留手写内容和来源�
 
 需要 **Obsidian 1.13.0 或更新版本**，仅支持桌面端。
 
-在“设置 → 第三方插件 → 浏览”中搜索 **Screen and File QA**，安装后启用。也可以从[官方插件页面](https://community.obsidian.md/plugins/current-note-chat)点击 **Add to Obsidian**。[GitHub 1.0.0 首发版](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/1.0.0)提供手动安装文件。社区目录可能稍后同步，请以页面实际显示的版本为准。
+在“设置 → 第三方插件 → 浏览”中搜索 **Screen and File QA**，安装后启用。也可以从[官方插件页面](https://community.obsidian.md/plugins/current-note-chat)点击 **Add to Obsidian**。[GitHub 1.0.2 发布版](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/1.0.2)提供手动安装文件。社区目录可能稍后同步，请以页面实际显示的版本为准。
 
 从 GitHub Release 下载 **plugin ZIP**，解压到仓库配置目录的 `plugins/current-note-chat/` 中。默认配置目录为 `.obsidian`，也可能被用户改过。
 
