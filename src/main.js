@@ -447,17 +447,17 @@ const CurrentNoteChatPlugin = class extends Plugin {
     throwIfAborted(signal);
     return image;
   }
-  async ask(notePath, noteText, history, question, onDelta, signal) {
-    const memories = await this.recallMemories(question, signal);
+  async ask(notePath, noteText, history, question, onDelta, signal, memoryOptions = {}) {
+    const memories = memoryOptions?.skipMemory ? { entries: [], text: '' } : await this.recallMemories(question, signal, memoryOptions?.excludeMessageId);
     const answer = this.settings.backend === 'codex'
       ? await this.askCodex(notePath, noteText, history, question, null, null, onDelta, signal, memories.text)
       : await this.askApi(notePath, noteText, history, question, null, null, onDelta, signal, memories.text);
     this.reinforceMemories(memories.entries);
     return answer;
   }
-  async askScreen(screenshot, history, question, onDelta, signal) {
+  async askScreen(screenshot, history, question, onDelta, signal, memoryOptions = {}) {
     if (!screenshot?.startsWith('data:image/png;base64,')) throw new Error('Invalid screenshot data.');
-    const memories = await this.recallMemories(question, signal);
+    const memories = memoryOptions?.skipMemory ? { entries: [], text: '' } : await this.recallMemories(question, signal, memoryOptions?.excludeMessageId);
     const answer = this.settings.backend === 'codex'
       ? await this.askCodex(null, null, history, question, screenshot, null, onDelta, signal, memories.text)
       : await this.askApi(null, null, history, question, screenshot, null, onDelta, signal, memories.text);
@@ -465,7 +465,7 @@ const CurrentNoteChatPlugin = class extends Plugin {
     return answer;
   }
   /** Local cross-conversation recall; degrades to nothing when disabled or unreadable. */
-  async recallMemories(question, signal) {
+  async recallMemories(question, signal, excludeMessageId) {
     if (this.disposed || this.settings.memoryRecallEnabled === false || !question?.trim()) return { entries: [], text: '' };
     try {
       const entries = await this.runTask(async inner => {
@@ -475,9 +475,11 @@ const CurrentNoteChatPlugin = class extends Plugin {
           metadataCache: this.app.metadataCache,
           folder: safeFolder(this.settings.knowledgeFolder, normalizePath, L('AI 知识库', 'AI Knowledge')),
           threads: this.messagesByNote,
-          hits: this.memoryHits
+          hits: this.memoryHits,
+          excludeMessageId
         }, question);
       }, signal, 15);
+      if (this.disposed || this.settings.memoryRecallEnabled === false || signal?.aborted) return { entries: [], text: '' };
       return { entries, text: memoryBlock(entries) };
     } catch { return { entries: [], text: '' }; }
   }
@@ -545,11 +547,11 @@ const CurrentNoteChatPlugin = class extends Plugin {
   }
   async checkModel(kind = 'text', signal) {
     if (kind === 'image') {
-      const answer = await this.askScreen(diagnosticImage(), [], 'What uppercase letter is visible in the image? Reply with that letter only.', null, signal);
+      const answer = await this.askScreen(diagnosticImage(), [], 'What uppercase letter is visible in the image? Reply with that letter only.', null, signal, { skipMemory: true });
       if (!/^A[.!。]?$/i.test(answer.trim())) throw new Error(L('未正确识别测试图中的字母 A，不能确认视觉能力。', 'The test image was not correctly identified as A; vision support is unconfirmed.'));
       return L('屏幕问答检测成功：正确识别了测试图片。', 'Screen Q&A check passed: the test image was correctly identified.');
     }
-    await this.ask('connection-check', 'The test word is READY.', [], 'Repeat the test word only.', null, signal);
+    await this.ask('connection-check', 'The test word is READY.', [], 'Repeat the test word only.', null, signal, { skipMemory: true });
     return L('文件问答检测成功：文字请求可用。', 'File Q&A check passed: text requests work.');
   }
   async runCodexCommand(args, signal) {

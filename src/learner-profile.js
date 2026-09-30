@@ -18,12 +18,11 @@ function backgroundText(settings) {
 /** Instruction lines injected before the data block in Q&A prompts; [] keeps old behavior. */
 function profileLines(settings) {
   const level = LEVELS[settings?.learnerLevel];
-  if (!level) return [];
   const background = backgroundText(settings);
-  const lines = [
-    `Learner profile: ${level}${background ? ` Background: ${background}.` : ''}`,
-    'Tailor depth and wording to this profile. Still give the direct answer first.'
-  ];
+  if (!level && !background && !settings?.answerDepth && !settings?.answerExamples) return [];
+  const lines = [];
+  if (level || background) lines.push(`Learner profile: ${level || 'No level specified.'}${background ? ` Background: ${background}.` : ''}`);
+  lines.push('Give the direct answer first. Tailor wording to any supplied learner profile; do not infer an unspecified level.');
   if (settings?.answerDepth) lines.push('After the direct answer, explain the underlying principle step by step — the why and how it connects, not just the conclusion — so the learner understands the real mechanism without asking follow-up questions.');
   if (settings?.answerExamples) lines.push('End with a clearly labeled section of 2-3 worked examples of increasing difficulty on the same knowledge point, each with a brief solution, so the learner can transfer the idea. These examples go beyond the source and must be visibly marked as such; factual answers themselves remain grounded in the provided source.');
   return lines;
@@ -32,7 +31,7 @@ function profileLines(settings) {
 /** Map the wizard's three answers onto a settings patch. */
 function applyProfileAnswers(answers) {
   const patch = { profileWizardDone: true };
-  if (answers && Object.values(LEVELS).length && typeof answers.level === 'string' && LEVELS[answers.level]) patch.learnerLevel = answers.level;
+  if (answers && typeof answers.level === 'string' && LEVELS[answers.level]) patch.learnerLevel = answers.level;
   if (answers && typeof answers.background === 'string') patch.learnerBackground = answers.background.trim().slice(0, MAX_BACKGROUND_CHARS);
   patch.answerDepth = false;
   patch.answerExamples = false;

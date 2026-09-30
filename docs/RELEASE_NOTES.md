@@ -1,3 +1,9 @@
+# Screen and File QA 1.2.1
+
+Cross-conversation recall now selects only relevant, completed earlier answers and never treats the question being asked as a past memory. Past hit counts boost related matches but cannot introduce unrelated ones. Recalled text is carried as untrusted prompt data, and connection checks send only their synthetic diagnostic input. Detailed explanations, worked examples and optional learner background also work when no learner level has been selected.
+
+The memory remains local until selected snippets are sent with an ordinary question to your configured AI provider. Earlier knowledge notes and saved conversations are unchanged.
+
 # Screen and File QA 1.2.0
 
 Every question now carries your past learning with it — locally.

@@ -22,7 +22,7 @@ export interface PluginSettings {
   qaFolder: string;
   qaAppendSource: boolean;
   qaAppendAnswer: boolean;
-  learnerLevel: '';
+  learnerLevel: '' | 'beginner' | 'intermediate' | 'advanced';
   learnerBackground: string;
   answerDepth: boolean;
   answerExamples: boolean;

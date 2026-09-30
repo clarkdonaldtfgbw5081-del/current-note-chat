@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1
+
+- Recall only completed earlier answers, exclude the active question and require a real text match before reinforcement can boost a memory. Provider diagnostics bypass recall.
+- Keep recalled snippets inside the prompt's untrusted JSON data and explicitly forbid following instructions contained in them.
+- Let detailed explanations, worked examples and optional background take effect independently of the learner-level dropdown.
+
 ## 1.2.0
 
 - Add cross-conversation memory recall, inspired by agent-memory designs (retain/recall/reinforce) but fully local: before each ordinary question the plugin recalls up to three related snippets from knowledge-folder notes (including aliases) and past questions across all conversations, and injects them as clearly-labeled background — the current file or screenshot stays authoritative for factual answers.

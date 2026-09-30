@@ -26,7 +26,7 @@ function bestSnippet(body, words, limit = MEMORY_SNIPPET_CHARS) {
  * the top names to extract a matching snippet. Past user questions from other
  * conversations are scored in memory and carry their answer's opening.
  */
-async function recallMemories({ vault, metadataCache, folder, threads, hits = new Map(), readNote }, question) {
+async function recallMemories({ vault, metadataCache, folder, threads, hits = new Map(), readNote, excludeMessageId }, question) {
   const words = terms(question);
   if (!words.length) return [];
   const read = typeof readNote === 'function' ? readNote : async file => (vault.read ? vault.read(file) : vault.cachedRead(file));
@@ -35,8 +35,8 @@ async function recallMemories({ vault, metadataCache, folder, threads, hits = ne
   for (const file of notes) {
     const title = file.basename || file.path.split('/').at(-1).slice(0, -3);
     const name = `${title} ${aliasesOf(metadataCache, file)}`.toLowerCase();
-    const base = scoreText(name, words) + Math.min(5, hits.get(file.path) || 0);
-    if (base >= 2) entries.push({ key: file.path, kind: 'note', title, path: file.path, file, base, snippet: '' });
+    const relevance = scoreText(name, words);
+    if (relevance >= 2) entries.push({ key: file.path, kind: 'note', title, path: file.path, file, base: relevance + Math.min(5, hits.get(file.path) || 0), snippet: '' });
   }
   entries.sort((a, b) => b.base - a.base);
   const deepRead = entries.slice(0, MEMORY_NOTE_READS);
@@ -51,12 +51,14 @@ async function recallMemories({ vault, metadataCache, folder, threads, hits = ne
     if (!Array.isArray(thread)) continue;
     for (let index = 0; index < thread.length; index++) {
       const message = thread[index];
-      if (message?.role !== 'user' || !message.text?.trim() || message.error) continue;
+      if (message?.role !== 'user' || !message.text?.trim() || message.error || message.id === excludeMessageId) continue;
       const text = message.text.trim();
-      const base = scoreText(text.toLowerCase(), words) + Math.min(5, hits.get(`thread:${key}:${message.id}`) || 0);
-      if (base < 4) continue;
+      const relevance = scoreText(text.toLowerCase(), words);
+      if (relevance < 4) continue;
       const reply = thread.slice(index + 1).find(item => item.role === 'assistant' && item.replyTo === message.id && !item.error && !item.streaming && item.text?.trim());
-      entries.push({ key: `thread:${key}:${message.id}`, kind: 'thread', title: text.split('\n')[0].slice(0, 80), source: key, base, snippet: `${text.slice(0, 200)}${reply ? `\n→ ${reply.text.trim().slice(0, 300)}` : ''}` });
+      if (!reply) continue;
+      const base = relevance + Math.min(5, hits.get(`thread:${key}:${message.id}`) || 0);
+      entries.push({ key: `thread:${key}:${message.id}`, kind: 'thread', title: text.split('\n')[0].slice(0, 80), source: key, base, snippet: `${text.slice(0, 200)}\n→ ${reply.text.trim().slice(0, 300)}` });
     }
   }
   const chosen = [];

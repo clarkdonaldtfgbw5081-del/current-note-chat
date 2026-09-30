@@ -14,6 +14,16 @@ test('unset learner level keeps the historical prompt behavior', () => {
   assert.equal(buildScreenPrompt([], 'q'), buildScreenPrompt([], 'q', []));
 });
 
+test('depth, examples and background work independently of the level dropdown', () => {
+  const depth = profileLines({ learnerLevel: '', answerDepth: true });
+  assert.match(depth.join(' '), /underlying principle/);
+  assert.match(buildPrompt('p.md', 'text', [], 'q', depth), /underlying principle/);
+  const examples = profileLines({ learnerLevel: '', answerExamples: true });
+  assert.match(examples.join(' '), /worked examples/);
+  const background = profileLines({ learnerLevel: '', learnerBackground: '学过概率论' });
+  assert.match(background.join(' '), /学过概率论/);
+});
+
 test('profile lines reflect level, depth, examples and bounded background', () => {
   const lines = profileLines({ learnerLevel: 'beginner', answerDepth: true, answerExamples: true, learnerBackground: '  第三年统计学  ' });
   assert.equal(lines.length, 4);

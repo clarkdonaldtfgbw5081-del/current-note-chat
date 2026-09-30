@@ -28,6 +28,7 @@ test('retrying an older error uses that question and retains later conversation'
   fixture.widget.cacheSnapshot(first.id, { mode: 'file', source: 'note.md', question: first.text, history: [], noteText: 'Original file context' });
   await fixture.widget.sendQuestion(first.id);
   assert.equal(fixture.questions[0][3], 'first question'); assert.equal(fixture.questions[0][1], 'Original file context');
+  assert.equal(fixture.questions[0][6].excludeMessageId, first.id);
   assert.equal(thread.length, 4); assert.equal(thread[3].text, 'latest answer'); assert.equal(thread[1].text, 'retry answer');
 });
 test('screen retries reuse cached screenshots rather than capturing a new monitor', async () => {
@@ -36,10 +37,25 @@ test('screen retries reuse cached screenshots rather than capturing a new monito
   fixture.plugin.settings.contextMode = 'screen'; fixture.plugin.messagesByNote = new Map([['__current_screen__', fixture.plugin.messagesByNote.get('note.md')]]);
   let captures = 0, image;
   fixture.plugin.captureCurrentScreen = () => { captures++; throw new Error('Should not capture'); };
-  fixture.plugin.askScreen = async screenshot => { image = screenshot; return 'screen answer'; };
+  let options;
+  fixture.plugin.askScreen = async (screenshot, history, question, onDelta, signal, memoryOptions) => { image = screenshot; options = memoryOptions; return 'screen answer'; };
   fixture.widget.cacheSnapshot(first.id, { mode: 'screen', screenshot: 'data:image/png;base64,ORIGINAL', history: [] });
   await fixture.widget.sendQuestion(first.id);
   assert.equal(captures, 0); assert.equal(image, 'data:image/png;base64,ORIGINAL');
+  assert.equal(options.excludeMessageId, first.id);
+});
+test('provider diagnostics do not send recalled vault memories', async context => {
+  const plugin = new Plugin();
+  let textOptions, imageOptions;
+  plugin.ask = async (path, text, history, question, onDelta, signal, options) => { textOptions = options; return 'READY'; };
+  plugin.askScreen = async (image, history, question, onDelta, signal, options) => { imageOptions = options; return 'A'; };
+  const previousDocument = global.document;
+  global.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {} }), toDataURL: () => 'data:image/png;base64,TEST' }) };
+  context.after(() => { global.document = previousDocument; });
+  await plugin.checkModel('text');
+  await plugin.checkModel('image');
+  assert.equal(textOptions.skipMemory, true);
+  assert.equal(imageOptions.skipMemory, true);
 });
 test('stopping a request never auto-saves a partial answer', async () => {
   const fixture = widgetFixture([]); fixture.widget.inputEl.value = 'question';

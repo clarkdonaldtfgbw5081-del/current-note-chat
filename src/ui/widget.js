@@ -338,8 +338,8 @@ class CurrentNoteChatWidget {
       meta = { mode, source: snapshot.source, model: this.plugin.currentModel() };
       const onDelta = partial => this.updateStreamingMessage(reply, partial);
       const answer = snapshot.screenshot
-        ? await this.plugin.askScreen(snapshot.screenshot, snapshot.history, question, onDelta, signal)
-        : await this.plugin.ask(snapshot.source, snapshot.noteText, snapshot.history, question, onDelta, signal);
+        ? await this.plugin.askScreen(snapshot.screenshot, snapshot.history, question, onDelta, signal, { excludeMessageId: user.id })
+        : await this.plugin.ask(snapshot.source, snapshot.noteText, snapshot.history, question, onDelta, signal, { excludeMessageId: user.id });
       throwIfAborted(signal); if (this.unmounted) return;
       reply.streaming = false;
       reply.text = snapshot.partial ? `${answer}\n\n${L('（本次基于相关片段回答，未涵盖全文。）', '(Answered from selected excerpts, not the complete file.)')}` : answer;
