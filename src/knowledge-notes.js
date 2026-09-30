@@ -226,9 +226,11 @@ class KnowledgeNotes {
         if (plan.existing && !file) throw new Error(L('目标笔记已移动或删除，请重新归档。', 'The target note moved or was deleted; archive again.'));
         const summary = answerBody(plan.summary).trim(), normalized = value => value.replace(/\s+/g, ' ').trim();
         const duplicate = !summary || summary.length >= 40 && normalized(text).includes(normalized(summary));
+        const questionText = snapshot.meta.activity === 'feynman' ? `${L('学习主题', 'Learning topic')}: ${snapshot.question}` : snapshot.question;
+        const question = formatNoteMessage({ role: 'user', text: questionText }).trimEnd();
         const context = `> [!info] ${L('归档依据', 'Archive context')}\n> ${new Date().toISOString().slice(0, 10)}${reason && !plan.inbox ? ` · ${reason}` : ''}${links ? `\n> ${links}` : ''}\n`;
         const heading = file || plan.inbox ? `## ${noteBody(plan.title).replace(/[\r\n]+/g, ' ')}\n\n` : '';
-        const entry = duplicate ? links && !text.includes(links) ? context : '' : `${heading}${plan.inbox ? `> [!warning] ${L('待确认分类', 'Classification needs review')}\n> ${reason}\n\n` : ''}${summary}\n\n${context}`;
+        const entry = `${heading}${question}\n\n${plan.inbox ? `> [!warning] ${L('待确认分类', 'Classification needs review')}\n> ${reason}\n\n` : ''}${duplicate ? '' : `${summary}\n\n`}${context}`;
         const prefix = file ? text.endsWith('\n\n') ? '' : '\n\n' : ['---', `date: ${new Date().toISOString().slice(0, 10)}`, 'type: ai-knowledge', 'cssclasses: [current-note-chat-note]', '---', '', `# ${plan.inbox ? L('待整理', 'Inbox') : plan.path.split('/').at(-1).slice(0, -3)}`, '', ''].join('\n');
         const block = file ? prefix + entry : entry, next = file ? text + block : prefix + block;
         snapshot.prepared = { path: plan.path, exists: Boolean(file), beforeHash: hash(text), afterHash: hash(next), blockHash: hash(block), block, start: file ? text.length : prefix.length, ...(!file ? { newContent: next } : {}) };

@@ -30,6 +30,7 @@ test('AI creates a topic note in the scoped knowledge tree with native math and 
   const f = fixture(); await f.vault.create('Private/independence.md', 'PRIVATE_CONTENT');
   const path = await f.queue(); assert.equal(path, 'AI Knowledge/Mathematics/Probability/Independence.md');
   const text = f.content.get(path); assert(text.includes('$P(A \\cap B)=P(A)P(B)$')); assert(text.includes('[[AI Q&A/session.md|Full conversation]]'));
+  assert(text.includes('> [!question] Question\n> Explain independence'));
   assert(!text.includes('cnc-')); assert(!text.includes('current-note-chat:'));
   const data = JSON.parse(f.calls[0].prompt.split('\n\n').at(-1)); assert.deepEqual(data.candidates, []); assert(!f.calls[0].prompt.includes('PRIVATE_CONTENT'));
 });
@@ -37,11 +38,32 @@ test('an existing topic receives an appended summary without changing handwritte
   const f = fixture(), path = 'AI Knowledge/Probability/Independence.md', original = '---\naliases: [independent events]\n---\n# My explanation\nHandwritten proof\n';
   await f.vault.create(path, original); f.plugin.askClassification = async prompt => { f.calls.push({ prompt }); return plan({ action: 'existing', path }); };
   assert.equal(await f.queue(), path); assert(f.content.get(path).startsWith(original)); assert(f.content.get(path).includes('Events are independent'));
+  assert(f.content.get(path).includes('> [!question] Question\n> Explain independence'));
   assert.equal(f.vault.getMarkdownFiles().length, 1); const data = JSON.parse(f.calls[0].prompt.split('\n\n').at(-1)); assert.deepEqual(data.candidates, [{ path, title: 'Independence' }]); assert(!f.calls[0].prompt.includes('Handwritten proof'));
 });
 test('uncertain classifications go to Inbox with their routing reason', async () => {
   const f = fixture(); f.plugin.askClassification = async () => plan({ confidence: 0.5, reason: 'The subject is unclear.' });
   const path = await f.queue(); assert.equal(path, 'AI Knowledge/Inbox.md'); assert(f.content.get(path).includes('Classification needs review')); assert(f.content.get(path).includes('The subject is unclear.'));
+  assert(f.content.get(path).includes('> [!question] Question\n> Explain independence'));
+});
+test('a repeated summary still preserves the distinct question and conversation link', async () => {
+  const f = fixture();
+  const path = await f.queue();
+  f.plugin.askClassification = async () => plan({ action: 'existing', path });
+  const user = newMessage('user', 'How do I recognize independent events?');
+  const reply = newMessage('assistant', f.reply.text, { replyTo: user.id });
+  await f.notes.queue('screen', user, reply, { transcriptPath: 'AI Q&A/second.md' });
+  const text = f.content.get(path);
+  assert(text.includes('> [!question] Question\n> Explain independence'));
+  assert(text.includes('> [!question] Question\n> How do I recognize independent events?'));
+  assert(text.includes('[[AI Q&A/second.md|Full conversation]]'));
+  assert.equal(text.split('Events are independent when').length - 1, 1);
+});
+test('a Feynman archive labels its topic instead of claiming the user submitted an explanation', async () => {
+  const f = fixture();
+  const user = newMessage('user', 'Independence');
+  const path = await f.notes.queue('screen', user, f.reply, { activity: 'feynman', transcriptPath: 'AI Q&A/lesson.md' });
+  assert(f.content.get(path).includes('> [!question] Question\n> Learning topic: Independence'));
 });
 test('bad JSON, request failures and unsafe destinations retain the original answer in Inbox', async () => {
   for (const result of ['not JSON', plan({ category: ['..'] }), plan({ category: ['C:\\Other'] }), plan({ title: 'CON' }), plan({ action: 'existing', path: 'Private/secret.md' }), null]) {

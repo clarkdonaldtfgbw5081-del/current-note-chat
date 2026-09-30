@@ -1,3 +1,7 @@
+# Screen and File QA 1.0.2
+
+Knowledge notes now include the exact text of the archived question before the AI summary. Distinct follow-up questions remain visible even when their summaries are identical. Feynman archives label their prompt as a learning topic. Existing archived notes are preserved; this change applies to new archive entries.
+
 # Screen and File QA 1.0.1
 
 Explain question write-back skips instead of failing silently.
@@ -27,7 +31,7 @@ Turn questions into readable notes and structured learning practice in desktop O
 
 ## Validation and limits
 
-136 automated regressions, lint, production build, release validation and PDF extraction with only the three installation files are checked locally. The release workflow verifies Windows/macOS/Linux before publication.
+138 automated regressions, lint, production build, release validation and PDF extraction with only the three installation files are checked locally. The release workflow verifies Windows/macOS/Linux before publication.
 
 Source appends retain 200 recent question IDs; this differs from the recoverable knowledge-archive journal and does not guarantee crash-proof or unbounded deduplication. Real-provider response quality, native themes, recording permissions and multi-device conflicts still require manual verification.
 

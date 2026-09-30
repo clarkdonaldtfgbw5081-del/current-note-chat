@@ -36,7 +36,7 @@ Stop or provider errors pause remaining sends until explicit resume. Queues are 
 | --- | --- |
 | Full conversation | `AI Q&A`, updated for the same conversation |
 | Source append | The asked-about Markdown note: question, optional answer and transcript link |
-| Topic knowledge | `AI Knowledge`, summarized by topic with provenance |
+| Topic knowledge | `AI Knowledge`; from 1.0.2, new entries include the typed question, topic summary and provenance |
 | Screenshot | PNG following Obsidian attachment settings, with an `images` fallback under the Q&A folder |
 
 Chinese UI uses `AI 问答` and `AI 知识库`. A screen question is bound to the Markdown note selected when it is submitted or queued, even if you switch notes while waiting. Existing handwritten content is retained; Q&A and knowledge folders are excluded from source appends.
