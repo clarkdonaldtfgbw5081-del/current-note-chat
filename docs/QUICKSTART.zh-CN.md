@@ -1,10 +1,10 @@
-# 从提问到复习：1.0.0 上手指南
+# 从提问到复习：上手指南
 
-[项目首页](../README.zh-CN.md) · [八张功能说明图](SCREENSHOTS.zh-CN.md) · [下载安装包](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/1.0.0)
+[项目首页](../README.zh-CN.md) · [八张功能说明图](SCREENSHOTS.zh-CN.md) · [下载最新版本](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/latest)
 
 ## 1. 安装并配置 AI 连接
 
-需要桌面 Obsidian 1.13.0+。在社区插件中搜索 **Screen and File QA**，或下载 Release 中的 `current-note-chat-plugin-1.0.0.zip`，解压到仓库配置目录的 `plugins/current-note-chat/`，再启用插件。安装目录应直接包含 `main.js`、`manifest.json`、`styles.css`，不要多套一层文件夹，也不要使用 source ZIP 作为安装包。
+需要桌面 Obsidian 1.13.0+。在社区插件中搜索 **Screen and File QA**，或从[最新发布页](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/latest)下载 `current-note-chat-plugin-<版本号>.zip`，解压到仓库配置目录的 `plugins/current-note-chat/`，再启用插件。安装目录应直接包含 `main.js`、`manifest.json`、`styles.css`，不要多套一层文件夹，也不要使用 source ZIP 作为安装包。社区目录的版本可能稍后才同步。
 
 打开插件设置，选择已经具备使用条件的连接方式：
 
@@ -29,6 +29,12 @@
 ![对文件或屏幕提问，自动留下对话记录](images/first-release-02-qa.png)
 
 *功能示意，使用模拟学习内容；实际界面跟随 Obsidian 主题。*
+
+### 按自己的基础调整回答，并召回旧知识
+
+首次使用的学习画像向导可以跳过。之后也能在设置中分别选择基础水平、开启“详细讲解原理”“回答后附例子”，或填写简短背景；未选基础水平时，其他选项仍能单独生效。详细讲解与例子会增加回答长度和 AI 用量。
+
+“跨对话记忆召回”默认开启。普通提问前，插件在本地从指定知识目录和已回答的历史对话中筛选最多三条相关片段；当前问题和未完成回答不会被误当成旧记忆，单靠历史命中次数也不能让无关内容进入结果。选中的片段作为不可信背景数据随问题发送给配置的 AI 服务商。关闭开关后，后续提问不再召回或强化旧记忆。连接检测、费曼学习、分类和笔记改写不会使用召回片段。
 
 ## 3. 连续追问，或暂停队列
 
@@ -89,6 +95,9 @@
 | --- | --- |
 | 同一对话始终保存到同一篇笔记 | “笔记自动保存方式” → “每个对话一篇笔记（默认）” |
 | 每个回答单独留一篇笔记 | “笔记自动保存方式” → “每次回答单独一篇笔记” |
+| 不设置基础水平也想讲透原理 | 开启“详细讲解原理”；基础水平可保持“未设置” |
+| 回答后附练习题 | 开启“回答后附例子”；基础水平可保持“未设置” |
+| 不让旧笔记和历史问答进入新提示 | 关闭“跨对话记忆召回” |
 | 只保留完整对话，不改原笔记 | 关闭“将提问写入被提问的笔记” |
 | 原笔记只记录问题 | 保持原笔记写回开启，关闭“写入提问时包含 AI 回答” |
 | 自己整理知识主题 | 关闭“AI 自动分类归档” |

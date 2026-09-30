@@ -1,10 +1,10 @@
-# From a question to a review: 1.0.0 quick start
+# From a question to a review: quick start
 
-[Project home](../README.md) · [Illustrated workflow](SCREENSHOTS.md) · [中文指南](QUICKSTART.zh-CN.md) · [Download](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/1.0.0)
+[Project home](../README.md) · [Illustrated workflow](SCREENSHOTS.md) · [中文指南](QUICKSTART.zh-CN.md) · [Latest release](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/latest)
 
 ## 1. Install and connect a provider
 
-Use desktop Obsidian 1.13.0+. Search community plugins for **Screen and File QA**, or extract `current-note-chat-plugin-1.0.0.zip` into your vault configuration directory's `plugins/current-note-chat/`. The installation folder must directly contain `main.js`, `manifest.json` and `styles.css`. The source ZIP is for development.
+Use desktop Obsidian 1.13.0+. Search community plugins for **Screen and File QA**, or extract the `current-note-chat-plugin-<version>.zip` from the [latest release](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/latest) into your vault configuration directory's `plugins/current-note-chat/`. The installation folder must directly contain `main.js`, `manifest.json` and `styles.css`. The source ZIP is for development. The community directory may show a different version while it syncs.
 
 In the plugin settings, configure a signed-in local Codex CLI, an OpenAI/DeepSeek model and SecretStorage key, or a compatible HTTPS Chat Completions endpoint. Test File Q&A first. Test Screen Q&A separately if your provider supports images. Diagnostics may incur AI usage; the image diagnostic uses a generated test image rather than your actual display.
 
@@ -19,6 +19,12 @@ Choose **Screen** for a displayed exercise or page. Review the capture before se
 ![File and screen Q&A](images/first-release-02-qa.png)
 
 *The illustrations use fictional Chinese learning content and a simplified rendered UI. They are not native Obsidian screenshots.*
+
+### Tailor explanations and recall earlier learning
+
+The first-run learner profile is optional. You can set a level, turn on **Explain principles in depth** or **Add worked examples**, and add short background notes separately in settings. Unset options do not change ordinary answers. Longer explanations and examples can increase provider usage.
+
+**Cross-conversation memory recall** is on by default. Before an ordinary question, it locally selects up to three relevant snippets from the configured knowledge folder and earlier answered conversations. The active question and unfinished answers are excluded; unrelated items cannot enter solely because they were recalled often. Selected snippets are sent as untrusted background data with your question to the configured provider. Turn off the setting to stop future recall and reinforcement. Connection diagnostics, Feynman practice, classification and note revision do not use these recalled snippets.
 
 ## 3. Queue follow-ups
 
@@ -71,6 +77,9 @@ Completed learning produces feedback and a local 1/3/7/14-day review plan. Selec
 | --- | --- |
 | One note for each conversation | Automatic note saving → One note per conversation |
 | One note for each answer | Automatic note saving → One note per answer |
+| Explain a principle without selecting a level | Turn on Explain principles in depth; the level may remain unset |
+| Add practice problems | Turn on Add worked examples; the level may remain unset |
+| Keep earlier notes and questions out of new prompts | Turn off Cross-conversation memory recall |
 | Keep transcripts without changing source notes | Disable Append questions to the asked note |
 | Record only questions in the source | Disable Include the AI answer when appending |
 | Organize topics yourself | Disable AI classification and archiving |

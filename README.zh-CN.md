@@ -2,17 +2,27 @@
 
 [English](README.md) · [更新记录](CHANGELOG.md) · [隐私与安全说明](SECURITY.md)
 
-一个 Obsidian 桌面插件：向 AI 提问屏幕画面或当前文件，也可以预览并应用 Markdown 笔记改写。
+在 Obsidian 中向 AI 提问屏幕画面或当前文件。每个对话自动保存到一篇笔记，完整回答可按主题归入知识库，还能用费曼学习检验理解；Markdown 笔记改写可先预览再应用。
 
 插件免费开源。AI 服务可能需要独立账号、API 密钥或订阅，并按请求收费。支持 OpenAI、DeepSeek、已登录 Codex CLI 使用的服务及你填写的兼容接口。插件不包含统计追踪或广告。
 
-[观看 1.0.2 宣传片（45 秒）](docs/media/promo-1.0.2/Screen-and-File-QA-1.0.2-45s.mp4) · [六张新版功能图与制作说明](docs/media/promo-1.0.2/README.zh-CN.md) · [1.0.2 发布页](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/1.0.2)
+[在 Obsidian 安装](https://community.obsidian.md/plugins/current-note-chat) · [下载最新版本](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/latest) · [图文上手指南](docs/QUICKSTART.zh-CN.md)
 
-*1080p · 中文字幕 · 无音轨。使用虚构内容绘制的功能示意，非实机录屏；展示原始文字提问、AI 摘要和来源如何共同进入知识笔记。*
+## 三步上手
 
-## 1.0.2：从提问到知识笔记
+1. 在桌面版 Obsidian 1.13.0 或更新版本的“第三方插件”中安装并启用 **Screen and File QA**。
+2. 在插件设置中配置 AI 服务，先运行“检测文件问答”；使用视觉模型时再单独检测屏幕问答。
+3. 打开资料，选择“文件”或“屏幕”并输入具体问题。屏幕截图默认先预览再发送；点击“查看笔记”即可打开自动保存的对话。
 
-对话默认自动保存到同一篇笔记；按需把提问写回原笔记；归档到「AI 知识库」时，**新生成的主题笔记会保留原始文字提问、AI 摘要和来源链接**。即使两次摘要相同，后一次提问也会留下。
+例如：“根据当前笔记，用例子解释为什么独立事件不一定互斥。”基础水平、“详细讲解原理”和“回答后附例子”可分别设置。普通提问还可从知识笔记和已回答的历史问题召回相关背景；若不希望这些片段随提问发送给 AI 服务商，可关闭“跨对话记忆召回”。[查看完整步骤和设置 →](docs/QUICKSTART.zh-CN.md)
+
+**1.2.1 更新：** 召回会排除正在提问的问题和未完成回答，历史命中次数不能让无关内容进入结果；召回文本仅作为背景数据使用，连接检测也不会携带旧记忆。未选择基础水平时，仍可单独设置详细讲解、例子和背景。[查看发布说明](docs/RELEASE_NOTES.md)。
+
+## 从提问到知识笔记
+
+对话默认持续保存到同一篇笔记；也可把问题写回被提问的 Markdown 笔记。完整回答保存后，可由 AI 分类归入指定知识目录中的主题笔记。**新归档保留原始文字提问、知识摘要和来源链接**；两次摘要相同时，后一次提问也会留下。
+
+以下是用虚构内容绘制的 1.0.2 功能示意，既非 Obsidian 实机截图，也不代表当前 1.2.1 界面的精确外观。
 
 ![1.0.2：问题与回答写回原笔记的示意](docs/media/promo-1.0.2/stills/03-source.png)
 
@@ -20,7 +30,7 @@
 
 ![1.0.2：同主题追问仍被保留的示意](docs/media/promo-1.0.2/stills/05-followup.png)
 
-旧归档保持原样；屏幕问题只记录输入的文字，不会从截图重建完整题干。[查看六张新版功能图与说明 →](docs/media/promo-1.0.2/README.zh-CN.md)
+旧归档保持原样；屏幕问题只记录输入的文字，不会从截图重建完整题干。[观看 1.0.2 功能示意视频](docs/media/promo-1.0.2/Screen-and-File-QA-1.0.2-45s.mp4)，或[查看六张图与制作说明](docs/media/promo-1.0.2/README.zh-CN.md)。
 
 ## 图文了解
 
@@ -66,7 +76,7 @@ AI 只在指定知识目录内寻找主题笔记，保留手写内容和来源�
 
 [查看保存位置、常用设置和完整学习流程 →](docs/QUICKSTART.zh-CN.md)
 
-**隐私：** 屏幕问答会截取指定显示器，画面可能包含其他应用窗口。默认先预览，确认后才发送。问题、近期对话、截图或选取的文件片段会发送给你配置的 AI 服务商。API 密钥使用 Obsidian SecretStorage；聊天记录和导出的问答笔记属于本地仓库数据，可能随仓库同步或备份。服务商自己的数据保留政策仍然适用。
+**隐私：** 屏幕问答会截取指定显示器，画面可能包含其他应用窗口。默认先预览，确认后才发送。问题、近期对话、截图或选取的文件片段、已设置的学习画像，以及最多三条召回记忆会发送给你配置的 AI 服务商。记忆先在本地从知识目录和已回答的历史问答中筛选；当前问题与未完成回答不会被召回。API 密钥使用 Obsidian SecretStorage；聊天记录和保存的笔记属于本地仓库数据，可能随仓库同步或备份。服务商自己的数据保留政策仍然适用。
 
 社区审核可能提示：可选 Codex CLI 连接使用本机文件和子进程；“复制回答”按钮写入剪贴板；内嵌 PDF.js 依赖含有 Function 构造器。PDF 解析已设置 `isEvalSupported: false`，关闭由 PDF 内容生成的函数编译。插件自身不会把 AI 回答当作 JavaScript 或 Shell 命令执行。各项用途和发布文件说明见[审核提示说明](docs/COMMUNITY_REVIEW.md)。
 
@@ -91,7 +101,7 @@ AI 只在指定知识目录内寻找主题笔记，保留手写内容和来源�
 
 需要 **Obsidian 1.13.0 或更新版本**，仅支持桌面端。
 
-在“设置 → 第三方插件 → 浏览”中搜索 **Screen and File QA**，安装后启用。也可以从[官方插件页面](https://community.obsidian.md/plugins/current-note-chat)点击 **Add to Obsidian**。[GitHub 1.0.2 发布版](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/1.0.2)提供手动安装文件。社区目录可能稍后同步，请以页面实际显示的版本为准。
+在“设置 → 第三方插件 → 浏览”中搜索 **Screen and File QA**，安装后启用。也可以从[官方插件页面](https://community.obsidian.md/plugins/current-note-chat)点击 **Add to Obsidian**。[GitHub 最新发布版](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/latest)提供手动安装文件。社区目录可能稍后同步，请以页面实际显示的版本为准。
 
 从 GitHub Release 下载 **plugin ZIP**，解压到仓库配置目录的 `plugins/current-note-chat/` 中。默认配置目录为 `.obsidian`，也可能被用户改过。
 

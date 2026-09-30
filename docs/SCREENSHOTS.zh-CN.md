@@ -4,7 +4,7 @@
 
 [中文上手指南](QUICKSTART.zh-CN.md) · [项目首页](../README.zh-CN.md)
 
-画面取自首发宣传片，使用虚构的概率学习例子和重新绘制的功能示意，不是原生 Obsidian 实机截图。说明对应首发实现；真实界面配色、尺寸与排版随 Obsidian 主题变化。点击图片可放大。
+画面取自首发宣传片，使用虚构的概率学习例子和重新绘制的功能示意，不是原生 Obsidian 实机截图。它们展示 1.0.0 的学习流程，并未覆盖全部新功能，也不代表 1.2.1 的精确界面；记忆召回和学习画像的当前设置见[上手指南](QUICKSTART.zh-CN.md)。真实界面配色、尺寸与排版随 Obsidian 主题变化。点击图片可放大。
 
 ## 1. 提问、留下记录、检验理解
 
@@ -66,4 +66,4 @@ AI 只在指定知识目录内寻找主题笔记，保留手写内容和来源�
 
 ![安装与版本](images/first-release-08-outro.png)
 
-[GitHub 1.0.0 Release](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/1.0.0)
+[下载最新版本](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/latest) · [查看首发 1.0.0 发布页](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/1.0.0)

@@ -4,7 +4,7 @@
 
 [Quick start](QUICKSTART.md) · [Project home](../README.md) · [中文说明](SCREENSHOTS.zh-CN.md)
 
-The frames use fictional probability examples and rendered feature illustrations, not native Obsidian screenshots. Descriptions match the first-release behavior; the actual appearance follows the Obsidian theme. Click images for full size.
+The frames use fictional probability examples and rendered feature illustrations, not native Obsidian screenshots. They show the original 1.0.0 workflow, not every feature or the exact 1.2.1 interface. The actual appearance follows the Obsidian theme. For current memory and learner-profile settings, see the [quick start](QUICKSTART.md). Click images for full size.
 
 ## 1. Ask, retain and practise
 
@@ -66,4 +66,4 @@ The directory name is Screen and File QA. First release 1.0.0 requires desktop O
 
 ![Installation and version](images/first-release-08-outro.png)
 
-[GitHub 1.0.0 Release](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/1.0.0)
+[Download the latest release](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/latest) · [View the illustrated 1.0.0 release](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/1.0.0)

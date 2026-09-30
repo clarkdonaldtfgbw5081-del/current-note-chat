@@ -2,17 +2,27 @@
 
 [简体中文](README.zh-CN.md) · [Changelog](CHANGELOG.md) · [Privacy and security](SECURITY.md)
 
-An Obsidian desktop plugin for asking AI about your screen or the current file, and reviewing Markdown note revisions before applying them.
+Ask AI about the screen or an open file in Obsidian. Keep each conversation in one note, organize completed answers by topic, and check understanding with Feynman practice. You can preview Markdown revisions before applying them.
 
 The plugin is free and open source. AI providers may require their own account, API key or subscription and charge for requests. Supported remote services are OpenAI, DeepSeek, the service used by your signed-in Codex CLI and any compatible endpoint you configure. The plugin has no analytics or advertising.
 
-[Watch the 1.0.2 video (45 seconds)](docs/media/promo-1.0.2/Screen-and-File-QA-1.0.2-45s.mp4) · [Six updated illustrations and editable source](docs/media/promo-1.0.2/README.zh-CN.md) · [1.0.2 release](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/1.0.2)
+[Install from Obsidian](https://community.obsidian.md/plugins/current-note-chat) · [Download the latest release](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/latest) · [Quick start](docs/QUICKSTART.md)
 
-*1080p · Chinese captions · no audio. Illustrated workflow with fictional content, not native Obsidian recordings. Shows how the original typed question, AI summary and source links appear together in a new knowledge note.*
+## Get started
 
-## 1.0.2: from question to knowledge note
+1. Install **Screen and File QA** from Obsidian's Community plugins on desktop Obsidian 1.13.0 or newer.
+2. Configure a provider in the plugin settings, then run **Check File Q&A**. Run the separate screen check if your model supports images.
+3. Open a file or display the material, choose **File** or **Screen**, and ask a specific question. Screen captures are previewed before sending by default. Use **View note** to open the automatically saved conversation.
 
-Each conversation updates one note by default. You can also write the question back to its source note. When a completed answer is archived, the **new topic entry includes the original typed question, AI summary and source links**. A later follow-up question remains visible even when its summary already exists.
+For example: “Explain why independent events are not necessarily mutually exclusive, using the current note.” Set your learner level, **Explain principles in depth**, or **Add worked examples** independently. Ordinary questions can recall related knowledge notes and earlier answered questions; turn off **Cross-conversation memory recall** if you do not want that context sent to the provider. [See the full walkthrough and settings →](docs/QUICKSTART.md)
+
+**Updated in 1.2.1:** Recall excludes the question being asked and unfinished answers, and past hit counts cannot promote unrelated content. Recalled text is treated as background data; provider connection checks do not include it. Explanation depth, worked examples and background can be set without selecting a learner level. [Read the release notes](docs/RELEASE_NOTES.md).
+
+## From a question to a knowledge note
+
+Each conversation updates one note by default. The question can also be written back to its source Markdown note. After a completed answer is saved, optional AI classification puts a summary in a topic note under the configured knowledge folder. **The topic entry includes the original typed question, summary and source links.** Later follow-up questions remain visible even when their summaries match.
+
+The following frames illustrate the 1.0.2 workflow with fictional content; they are not native Obsidian screenshots or images of the current 1.2.1 interface.
 
 ![Question and answer written back to the source note; illustrated UI](docs/media/promo-1.0.2/stills/03-source.png)
 
@@ -20,7 +30,7 @@ Each conversation updates one note by default. You can also write the question b
 
 ![A follow-up question retained with a matching summary; illustrated UI](docs/media/promo-1.0.2/stills/05-followup.png)
 
-Earlier archives are preserved. Screen questions retain the text you typed; the plugin does not reconstruct the full problem statement from a screenshot. [See all six updated illustrations →](docs/media/promo-1.0.2/README.zh-CN.md)
+Earlier archives are preserved. Screen questions retain the text you typed; the plugin does not reconstruct the full problem statement from a screenshot. [Watch the illustrated 1.0.2 video](docs/media/promo-1.0.2/Screen-and-File-QA-1.0.2-45s.mp4) or [see all six frames and production notes](docs/media/promo-1.0.2/README.zh-CN.md).
 
 ## Illustrated walkthrough
 
@@ -66,7 +76,7 @@ After learning, track local 1/3/7/14-day reviews and choose a topic to practise.
 
 [See note destinations, settings and the complete learning flow →](docs/QUICKSTART.md)
 
-**Privacy:** Screen Q&A captures the selected display, including other application windows. A preview is shown before sending by default. The question, recent conversation and screenshot or selected file excerpts are sent to your configured provider. API keys use Obsidian SecretStorage. Chat histories and exported notes are local vault data that may be copied by vault sync. See [SECURITY.md](SECURITY.md) for storage, cancellation and Codex details.
+**Privacy:** Screen Q&A captures the selected display, including other application windows. A preview is shown before sending by default. The question, recent conversation, screenshot or selected file excerpts, optional learner settings, and up to three recalled memory snippets are sent to your configured provider. Recall searches the knowledge folder and answered conversation history locally; the current question and unfinished answers are excluded. API keys use Obsidian SecretStorage. Chat histories and saved notes are local vault data that may be copied by vault sync. See [SECURITY.md](SECURITY.md) for storage, cancellation and Codex details.
 
 Community review may flag filesystem access and child processes used by the optional Codex CLI backend, clipboard writes performed by the Copy answer button, and Function constructors inside the bundled PDF.js dependency. PDF parsing sets `isEvalSupported: false` to disable PDF-generated function compilation. The plugin's own code does not evaluate AI answers as JavaScript or shell commands. See [Review notices](docs/COMMUNITY_REVIEW.md) for the capabilities and release-asset checks.
 
@@ -92,7 +102,7 @@ Community review may flag filesystem access and child processes used by the opti
 
 Requires Obsidian **1.13.0 or newer** on desktop. Mobile is not supported.
 
-Open **Settings → Community plugins → Browse**, search for **Screen and File QA**, install it and enable it. Alternatively, select **Add to Obsidian** on the [official plugin page](https://community.obsidian.md/plugins/current-note-chat). [GitHub 1.0.2 release](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/tag/1.0.2) provides manual installation assets. The community directory may synchronize later; check its displayed version before installation.
+Open **Settings → Community plugins → Browse**, search for **Screen and File QA**, install it and enable it. Alternatively, select **Add to Obsidian** on the [official plugin page](https://community.obsidian.md/plugins/current-note-chat). The [latest GitHub release](https://github.com/clarkdonaldtfgbw5081-del/current-note-chat/releases/latest) provides manual installation assets. The community directory may synchronize later; check its displayed version before installation.
 
 For manual installation, extract the **plugin ZIP** from a release into your vault's configuration directory under `plugins/current-note-chat/`. The default configuration directory is `.obsidian`; it can be customized.
 
